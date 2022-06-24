@@ -299,3 +299,5 @@ releaseScripts/default/UReqCheck-win32/
 /releaseScripts/default/update-smtinterpol-firestation.sh
 /trunk/runtime-Debug-E4.product
 /trunk/runtime-WebBackend.product
+
+changelog/*

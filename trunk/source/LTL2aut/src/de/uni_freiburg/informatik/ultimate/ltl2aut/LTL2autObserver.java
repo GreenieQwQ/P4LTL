@@ -111,8 +111,14 @@ public class LTL2autObserver implements IUnmanagedObserver {
 			// both formats are in ltl2aut format and we need to create a check with boogie-code
 			final String[] specification = getLTLPropertyString();
 			if (specification.length > 1) {
-				throw new UnsupportedOperationException(
-						"We currently support only one LTL property at a time, but found " + specification.length);
+				String errorstr = "We currently support only one LTL property at a time, "
+						+ "but found " + specification.length;
+				errorstr += "\n" + "Specs are:\n";
+				for(String spec: specification)
+				{
+					errorstr += spec + "\n";
+				}
+				throw new UnsupportedOperationException(errorstr);
 			}
 			mCheck = createCheckFromPropertyString(specification[0]);
 		}

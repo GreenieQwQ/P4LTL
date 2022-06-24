@@ -109,7 +109,7 @@ public class BoogieSymbolTable {
 		addSymbol(StorageClass.LOCAL, procedureName, variableName, decl);
 	}
 
-	protected void addGlobalVariable(final String variableName, final Declaration decl) {
+	public void addGlobalVariable(final String variableName, final Declaration decl) {
 		addSymbol(StorageClass.GLOBAL, null, variableName, decl);
 	}
 

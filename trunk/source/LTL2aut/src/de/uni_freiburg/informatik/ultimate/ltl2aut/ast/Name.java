@@ -30,7 +30,7 @@ public class Name extends AstNode {
 
 	private static final long serialVersionUID = 1L;
 
-	private final String mValue;
+	private String mValue;
 
 	public Name(final String name) {
 		mValue = name;
@@ -45,4 +45,7 @@ public class Name extends AstNode {
 		return mValue;
 	}
 
+	public void setIdent(String name) {
+		mValue = name;
+	}
 }

@@ -89,6 +89,7 @@ public class BuchiProgramProduct implements IGenerator {
 		switch (graphType.getCreator()) {
 		case "de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder":
 		case "de.uni_freiburg.informatik.ultimate.ltl2aut":
+		case "edu.utexas.cs.utopia.ltl2aut":
 			mUseBuchiProductObserver = true;
 			mUseful++;
 			break;
