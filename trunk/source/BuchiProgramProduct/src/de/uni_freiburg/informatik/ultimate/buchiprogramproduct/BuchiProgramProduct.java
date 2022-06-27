@@ -90,6 +90,7 @@ public class BuchiProgramProduct implements IGenerator {
 		case "de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder":
 		case "de.uni_freiburg.informatik.ultimate.ltl2aut":
 		case "edu.utexas.cs.utopia.ltl2aut":
+		case "edu.tsinghua.ss.thufv.ltl2aut":
 			mUseBuchiProductObserver = true;
 			mUseful++;
 			break;

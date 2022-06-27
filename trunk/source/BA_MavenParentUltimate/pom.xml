@@ -72,7 +72,7 @@
 		<websiteExamplesDir>${workspaceDir}/WebUltimateBridge/src/de/uni_freiburg/informatik/ultimate/webbridge/resources/examples</websiteExamplesDir>
 		<websiteHtmlDir>${workspaceDir}/Website/html</websiteHtmlDir>
 		<websiteJsonDir>${workspaceDir}/Website/WebContent/json</websiteJsonDir>
-		<utopiaSpecLangParserDir>${workspaceDir}/UtopiaSpecLang/src/edu/utexas/cs/utopia/specLang/parse </utopiaSpecLangParserDir>
+		<thufvSpecLangParserDir>${workspaceDir}/ThufvSpecLang/src/edu/utexas/cs/thufv/specLang/parse </thufvSpecLangParserDir>
 
 		<!-- Encoding settings -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -552,8 +552,8 @@
 		<module>../TreeAutomizer</module>
 		<module>../UltimateCLI</module>
 		<module>../UltimateDeltaDebugger</module>
-		<module>../UtopiaLTL2Aut</module>
-        <module>../UtopiaSpecLang</module>
+		<module>../ThufvLTL2Aut</module>
+        <module>../ThufvSpecLang</module>
 		<module>../WitnessParser</module>
 		<module>../WitnessPrinter</module>
 		<module>../UltimateEliminatorController</module>

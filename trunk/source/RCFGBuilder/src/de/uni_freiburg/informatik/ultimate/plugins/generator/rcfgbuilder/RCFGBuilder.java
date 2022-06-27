@@ -68,7 +68,7 @@ public class RCFGBuilder implements IGenerator {
 
 	@Override
 	public ModelQuery getModelQuery() {
-		return ModelQuery.LAST;
+		return ModelQuery.ALL;
 	}
 
 	@Override

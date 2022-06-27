@@ -511,14 +511,14 @@
          unpack="false"/>
 
    <plugin
-         id="edu.utexas.cs.utopia.specLang"
+         id="edu.tsinghua.ss.thufv.ltl2aut"
          download-size="0"
          install-size="0"
          version="0.0.0"
          unpack="false"/>
 
    <plugin
-         id="edu.utexas.cs.utopia.ltl2aut"
+         id="edu.tsinghua.ss.thufv.specLang"
          download-size="0"
          install-size="0"
          version="0.0.0"
