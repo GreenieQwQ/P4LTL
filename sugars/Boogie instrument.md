@@ -67,7 +67,7 @@ typora-copy-images-to: ../images
           - 若event无约束
             - 则revert赋值为false，否则赋值为true：![image-20220626211740245](../images/image-20220626211740245.png)
       - 若为start的声明（不为实现），则加上所有event的modifies：![image-20220626185821558](../images/image-20220626185821558.png)
-    - 最后若没有Ultimate.start则加上一个Ultimate.start，并且加上之前所述的event和function的初始化![../images/image-20220626231413555.png)
+    - 最后若没有Ultimate.start则加上一个Ultimate.start，并且加上之前所述的event和function的初始化![mage-20220626231413555.png](../images/image-20220626231413555.png)
 
 - 走一遍start插桩的流程
   - 假设对于`started(func, i != 1)`进行插桩：
