@@ -1,24 +1,28 @@
+---
+typora-copy-images-to: images
+---
+
 ## Build
 
 - 参考[Installation · ultimate-pa/ultimate Wiki](https://github.com/ultimate-pa/ultimate/wiki/Installation)的build方案
-- 注意在打开target编译前记得配置preference-java-compile选项，将编译器设置为jdk：![image-20220625170111681](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625170111681.png)
+- 注意在打开target编译前记得配置preference-java-compile选项，将编译器设置为jdk：![image-20220625170111681](images\image-20220625170111681.png)
 
 ## 每个插件共有的接口
 
 - Activator
   - 定义了插件名供识别
-  - ![image-20220625161559473](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625161559473.png)
+  - ![image-20220625161559473](images\image-20220625161559473.png)
 - 插件名.java
-  - 重要的为这个函数：![image-20220625162501498](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625162501498.png)
+  - 重要的为这个函数：![image-20220625162501498](images\image-20220625162501498.png)
   - 若toolchain中，前面的工具匹配case，则工具尝试基于这个case作为输入进行调用
 - **插件名Oberserver.java**
   - 插件的主体实现部分，调用的流程为init->process->finish
-  - init基本不需要改动，作用为初始化一些toochain的配置和变量![image-20220625163349667](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625163349667.png)
-  - process基本也不需要改动，作用为遍历输入toolchain的model来初始化对应的输入参数：![image-20220625163429849](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625163429849.png)
-  - finish为插件的主要实现部分，在里面基于init、process配置后的参数进行运算处理，并将输出存储在类内变量中即可![image-20220625163626395](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625163626395.png)
+  - init基本不需要改动，作用为初始化一些toochain的配置和变量![image-20220625163349667](images\image-20220625163349667.png)
+  - process基本也不需要改动，作用为遍历输入toolchain的model来初始化对应的输入参数：![image-20220625163429849](images\image-20220625163429849.png)
+  - finish为插件的主要实现部分，在里面基于init、process配置后的参数进行运算处理，并将输出存储在类内变量中即可![image-20220625163626395](images\image-20220625163626395.png)
 - PreferenceInitializer.java
   - 这里面定义了Obeserver中用户可配置的参数，在Debug.product中可以方便地配置和存储setting
-  - ![image-20220625162025215](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625162025215.png)
+  - ![image-20220625162025215](images\image-20220625162025215.png)
     - label是这个setting显示的名字
     - def为这个setting的默认参数
 
@@ -44,24 +48,24 @@
         - 参考smartltl的.cup和.lex文件解析
       - 基于解析后的ast进行boogie插桩
         - **需要结合P4Boogie的具体构造来设计插桩规则**
-          - ![image-20220606114730425](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220606114730425.png)
+          - ![image-20220606114730425](images\image-20220606114730425.png)
           - 先实现match+drop？
         - 通配符的实现：如`x == 192.168.1.0/24`
           - 可以考虑基于bv进行mask操作来做？
       - 基于p4ltlast的tostring方案将p4ltl翻译为regularltl
         - 参考smartltl的实现
-    - ![image-20220625184651194](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625184651194.png)
+    - ![image-20220625184651194](images\image-20220625184651194.png)
   
   - **插桩输入的Boogie文件**，因为将P4LTL翻译为regular ltl需要对Boogie文件**定义并跟踪**相关变量的值
   
     - 待完成，接口如下
   
-      ![image-20220625184709983](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625184709983.png)
+      ![image-20220625184709983](images\image-20220625184709983.png)
 
 ## BuchiAutomizer
 
 - 作用：
-  - ![image-20220625164018457](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625164018457.png)
+  - ![image-20220625164018457](images\image-20220625164018457.png)
   - 基于CEGAR尝试证明Buchi自动机是否有feasible、fair的trace
   - 我们需要改动的：
     - 参考Utopia的代码中对于事务时间步的实现，对Final state进行包时间步的定义
@@ -69,21 +73,21 @@
 ## Debug
 
 - 参考ultimate的wiki运行`Debug-E4.product`即可
-- ![image-20220625164849091](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625164849091.png)
+- ![image-20220625164849091](images\image-20220625164849091.png)
 - Settings可以方便地配置各个插件的参数：
-  - ![image-20220625164325486](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625164325486.png)
-  - ![image-20220625165336676](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625165336676.png)
-- ![image-20220625165818195](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625165818195.png)
+  - ![image-20220625164325486](images\image-20220625164325486.png)
+  - ![image-20220625165336676](images\image-20220625165336676.png)
+- ![image-20220625165818195](images\image-20220625165818195.png)
   - Save Settings可以将选项存储为epf文件（应该是eclipse preference的缩写）
   - Load settings选项可以读取这样的epf文件
-- ![image-20220625165905691](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625165905691.png)
-  - 点击Open Source打开一个bpl文件，然后会弹出配置toolchain的选项：![image-20220625170202673](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625170202673.png)
-  - 选择`P4LTL.xml`即可：![image-20220625170229790](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625170229790.png)
-  - 然后就可以看到运行后的结果：![image-20220625170338882](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220625170338882.png)
+- ![image-20220625165905691](images\image-20220625165905691.png)
+  - 点击Open Source打开一个bpl文件，然后会弹出配置toolchain的选项：![image-20220625170202673](images\image-20220625170202673.png)
+  - 选择`P4LTL.xml`即可：![image-20220625170229790](images\image-20220625170229790.png)
+  - 然后就可以看到运行后的结果：![image-20220625170338882](images\image-20220625170338882.png)
 
 ## TODO
 
-- LTL：![image-20220518115110797](C:\Users\13566\AppData\Roaming\Typora\typora-user-images\image-20220518115110797.png)
+- LTL：![image-20220518115110797](images\image-20220518115110797.png)
 
   - 为了方便描述，加入了`if elif else then`，`if a then b`表示`a => b`、`if a then c elif b then d else e`表示
 
@@ -106,5 +110,4 @@
 
 ## Sugars
 
-- [插桩Boogie代码思路](./Boogie instrument.md)
-
+- [插桩Boogie代码思路](./sugars)
