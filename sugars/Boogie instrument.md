@@ -1,73 +1,73 @@
 ---
-typora-copy-images-to: ..\images
+typora-copy-images-to: ../images
 ---
 
 ## 插桩Boogie代码思路
 
 - instrument2函数
-  - 首先调用getevent函数，递归遍历ast树，将所有event类型收集，加入array中：![image-20220626170026322](..\images\image-20220626170026322.png)
-  - 然后基于addGobalVar函数，为每个自由变量的定义插桩相应的声明：![image-20220626170209233](..\images\image-20220626170209233.png)
-    - Unit类型——代表一整个Boogie文件，由一堆顺序不相关的声明组成：![image-20220626170333631](..\images\image-20220626170333631.png)
+  - 首先调用getevent函数，递归遍历ast树，将所有event类型收集，加入array中：![image-20220626170026322](../images/image-20220626170026322.png)
+  - 然后基于addGobalVar函数，为每个自由变量的定义插桩相应的声明：![image-20220626170209233](../images/image-20220626170209233.png)
+    - Unit类型——代表一整个Boogie文件，由一堆顺序不相关的声明组成：![image-20220626170333631](../images/image-20220626170333631.png)
     - addGlobalVar函数：
       - 输入为name + type的字符串，当成tuple也可以，以及要插桩的unit
-      - 首先在最前面的Declaration中进行插入：![image-20220626171228047](..\images\image-20220626171228047.png)
-      - 然后经过一些trival的设置，创建一个Boogie的Declaration：![image-20220626171612061](..\images\image-20220626171612061.png)
+      - 首先在最前面的Declaration中进行插入：![image-20220626171228047](../images/image-20220626171228047.png)
+      - 然后经过一些trival的设置，创建一个Boogie的Declaration：![image-20220626171612061](../images/image-20220626171612061.png)
         - new Attribute[0]为空数组
-      - 调用copyToBiigierDec，将原有的declaration拷贝，并使用新声明的dec补充到第一个元素：![image-20220626171714335](..\images\image-20220626171714335.png)
-        - ![image-20220626171727655](..\images\image-20220626171727655.png)
-        - ![image-20220626171803862](..\images\image-20220626171803862.png)
-      - 然后调用unit的setDec方法重设dec：![image-20220626171833024](..\images\image-20220626171833024.png)
+      - 调用copyToBiigierDec，将原有的declaration拷贝，并使用新声明的dec补充到第一个元素：![image-20220626171714335](../images/image-20220626171714335.png)
+        - ![image-20220626171727655](../images/image-20220626171727655.png)
+        - ![image-20220626171803862](../images/image-20220626171803862.png)
+      - 然后调用unit的setDec方法重设dec：![image-20220626171833024](../images/image-20220626171833024.png)
       - 最后在符号表中插入插桩的变量，返回新程序：
-        - ![image-20220626171903425](..\images\image-20220626171903425.png)
+        - ![image-20220626171903425](../images/image-20220626171903425.png)
   - 然后进行event类型的处理：
-    - 首先对每个event插桩对应的bool变量：![image-20220626172141589](..\images\image-20220626172141589.png)
-      - smartltl允许`start(*, formula)`，此时event对应的sunc为corralchoice——在smartpulse中，仅有一个corralchoice为前缀的函数，这个函数供main的无限循环调用：![image-20220626175937930](..\images\image-20220626175937930.png)
-        - 作用为随机选取事务执行：![image-20220626175959782](..\images\image-20220626175959782.png)
+    - 首先对每个event插桩对应的bool变量：![image-20220626172141589](../images/image-20220626172141589.png)
+      - smartltl允许`start(*, formula)`，此时event对应的sunc为corralchoice——在smartpulse中，仅有一个corralchoice为前缀的函数，这个函数供main的无限循环调用：![image-20220626175937930](../images/image-20220626175937930.png)
+        - 作用为随机选取事务执行：![image-20220626175959782](../images/image-20220626175959782.png)
       - processed_event从代码中看来似乎是未用的，应该可以忽略
-    - 然后提取fsums，因为fsum可以被用作约束，所以需要从每个约束中提取可能含有的fsum，方法就是遍历，若node是fsum则加入：![image-20220626173045693](..\images\image-20220626173045693.png)
-      - 然后进行globalvar的插桩：![image-20220626173229235](..\images\image-20220626173229235.png)
+    - 然后提取fsums，因为fsum可以被用作约束，所以需要从每个约束中提取可能含有的fsum，方法就是遍历，若node是fsum则加入：![image-20220626173045693](../images/image-20220626173045693.png)
+      - 然后进行globalvar的插桩：![image-20220626173229235](../images/image-20220626173229235.png)
     - 然后对Boogie文件中所有的Procedure进行遍历：
-      - 接口getSpec：若为null则为实现，否则为procedure![image-20220626173424420](..\images\image-20220626173424420.png)
-      - 然后遍历所有的event，若有event对应这个procedure，则为这个specfication加上modify这个event变量的标识：![image-20220626173723031](..\images\image-20220626173723031.png)
-        - addModifies函数：![image-20220626173813299](..\images\image-20220626173813299.png)
+      - 接口getSpec：若为null则为实现，否则为procedure![image-20220626173424420](../images/image-20220626173424420.png)
+      - 然后遍历所有的event，若有event对应这个procedure，则为这个specfication加上modify这个event变量的标识：![image-20220626173723031](../images/image-20220626173723031.png)
+        - addModifies函数：![image-20220626173813299](../images/image-20220626173813299.png)
           - 创建了一个修改bool类型、全局变量var的spec，并且调用Procedure的setSpec接口加入这个spec
-          - 注：无论是SmartPulse还是UA的源码都未找到这个接口，怀疑是utopia小组自己加的但是源码上传的版本不对![image-20220626174049865](..\images\image-20220626174049865.png)
-      - 然后对procedure的body进行修改：![image-20220626174159686](..\images\image-20220626174159686.png)
-        - 首先，**仅对于main函数**，对user定义的自由变量全部随机havoc初始化：![image-20220626174236578](..\images\image-20220626174236578.png)
-          - havocGlobalVar函数：![image-20220626174413547](..\images\image-20220626174413547.png)
+          - 注：无论是SmartPulse还是UA的源码都未找到这个接口，怀疑是utopia小组自己加的但是源码上传的版本不对![image-20220626174049865](../images/image-20220626174049865.png)
+      - 然后对procedure的body进行修改：![image-20220626174159686](../images/image-20220626174159686.png)
+        - 首先，**仅对于main函数**，对user定义的自由变量全部随机havoc初始化：![image-20220626174236578](../images/image-20220626174236578.png)
+          - havocGlobalVar函数：![image-20220626174413547](../images/image-20220626174413547.png)
             - 定义一个havoc statement，并且调用addToStmts2函数——作用为在原有的procedure的stmts中加入新的stmt：
               - addToStmts根据输入的方案（place）生成的newstmts不同：
-                - havocGlobalVar为"begin"，直接加如到最前面：![image-20220626181429917](..\images\image-20220626181429917.png)
-        - 然后若这个procedure对应fsum，则插桩fsum更新的函数；若procedure为ULTIMAT.start（**这是什么？**，猜测为parser的一些小处理），则将所有fsum在start中初始化为0：![image-20220626184149827](..\images\image-20220626184149827.png)
+                - havocGlobalVar为"begin"，直接加如到最前面：![image-20220626181429917](../images/image-20220626181429917.png)
+        - 然后若这个procedure对应fsum，则插桩fsum更新的函数；若procedure为ULTIMAT.start（**这是什么？**，猜测为parser的一些小处理），则将所有fsum在start中初始化为0：![image-20220626184149827](../images/image-20220626184149827.png)
           - 初始化全部初始化为0：
-            - ![image-20220626185138326](..\images\image-20220626185138326.png)
+            - ![image-20220626185138326](../images/image-20220626185138326.png)
             - 注：这个函数重载了，对于fsum为初始化0，对于event为初始化false
-          - 基于Goto实现conditional的fsum的条件赋值：![image-20220626184226563](..\images\image-20220626184226563.png)
+          - 基于Goto实现conditional的fsum的条件赋值：![image-20220626184226563](../images/image-20220626184226563.png)
             - GotoStmts是一个专有类，会产生随机跳转到Labels的任意label的语句
-              - ![image-20220626213543835](..\images\image-20220626213543835.png)
+              - ![image-20220626213543835](../images/image-20220626213543835.png)
             - **注：这样处理不会在Ultimate报错GOTO，需要寻找原因**
-            - **插入stmt的位置通过遍历所有stmt，然后定位到合适的位置来获取index**（这个stmt为Call statement + 名字匹配——在smartpulse中表示事务调用不被revert，调用成功）![image-20220626184708383](..\images\image-20220626184708383.png)
+            - **插入stmt的位置通过遍历所有stmt，然后定位到合适的位置来获取index**（这个stmt为Call statement + 名字匹配——在smartpulse中表示事务调用不被revert，调用成功）![image-20220626184708383](../images/image-20220626184708383.png)
       - 最后对event变量进行插桩：
-        - ![image-20220626202535912](..\images\image-20220626202535912.png)
+        - ![image-20220626202535912](../images/image-20220626202535912.png)
         - 若为procedure为start则初始化
-        - started谓词被定义为call，即对应代码`e.getOp().equals("call")`![image-20220626202819953](..\images\image-20220626202819953.png)
+        - started谓词被定义为call，即对应代码`e.getOp().equals("call")`![image-20220626202819953](../images/image-20220626202819953.png)
         - 若match或者started相关的特殊情况（这个是domain-specific的 目前并没有探究为什么要这样设置）则插桩event对应的谓词变量的赋值
-          - ![image-20220626210810097](..\images\image-20220626210810097.png)
+          - ![image-20220626210810097](../images/image-20220626210810097.png)
           - `getRealArgs`输入一个procedure的参数，从中提取event对应的procedure调用的实际参数
           - saveFlag存储revert变量之前的值到变量revert_hold中
           - revetFalse将revert重置为false
           - dumpFlag为将revert重新赋值为revert_hold
           - 若这个event有约束
-            - 则基于event的类型、基于Goto构造赋值语句，然后结合对revert变量的设置，将赋值语句依据event类型插桩到procedure应该对应的地方：![image-20220626211936178](..\images\image-20220626211936178.png)
+            - 则基于event的类型、基于Goto构造赋值语句，然后结合对revert变量的设置，将赋值语句依据event类型插桩到procedure应该对应的地方：![image-20220626211936178](../images/image-20220626211936178.png)
               - `buildIfStatementWithGoto`
-                - 因为约束中可能含有作者预定义的function，需要将这些function解析为实际的值：![image-20220626212941959](..\images\image-20220626212941959.png)
-                - 然后可以得到约束表达式的boogie赋值表达式：![image-20220626213012514](..\images\image-20220626213012514.png)
-                - 接着基于Goto构建赋值即可：![image-20220626213051498](..\images\image-20220626213051498.png)
+                - 因为约束中可能含有作者预定义的function，需要将这些function解析为实际的值：![image-20220626212941959](../images/image-20220626212941959.png)
+                - 然后可以得到约束表达式的boogie赋值表达式：![image-20220626213012514](../images/image-20220626213012514.png)
+                - 接着基于Goto构建赋值即可：![image-20220626213051498](../images/image-20220626213051498.png)
                   - 注：smartpulse的代码是不是错了？falseLabel后应该是body[1]（body为setFlag的返回值——index 0为置位event对应的变量true，1为false的语句）
           - 若event无约束
-            - 则revert赋值为false，否则赋值为true：![image-20220626211740245](..\images\image-20220626211740245.png)
-      - 若为start的声明（不为实现），则加上所有event的modifies：![image-20220626185821558](..\images\image-20220626185821558.png)
-    - 最后若没有Ultimate.start则加上一个Ultimate.start，并且加上之前所述的event和function的初始化![..\images\image-20220626231413555.png)
+            - 则revert赋值为false，否则赋值为true：![image-20220626211740245](../images/image-20220626211740245.png)
+      - 若为start的声明（不为实现），则加上所有event的modifies：![image-20220626185821558](../images/image-20220626185821558.png)
+    - 最后若没有Ultimate.start则加上一个Ultimate.start，并且加上之前所述的event和function的初始化![../images/image-20220626231413555.png)
 
 - 走一遍start插桩的流程
   - 假设对于`started(func, i != 1)`进行插桩：
