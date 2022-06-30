@@ -1,0 +1,88 @@
+// CUP specification for a simple expression evaluator (w/ actions)
+package edu.tsinghua.ss.thufv.specLang.parse;
+import com.github.jhoenicke.javacup.runtime.*;
+import de.uni_freiburg.informatik.ultimate.ltl2aut.ast.*;
+import ast.*;
+import java.util.ArrayList;
+import java.math.BigInteger;
+
+parser P4LTLParser;
+option symbols=P4LTLSymbols;
+
+/* exprinals (tokens returned by the scanner). */
+terminal           	LPAR, RPAR, MATCH, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, COMMA;
+terminal String 			NAME;
+terminal BigInteger 				INT;
+
+/* Non-exprinals */
+non terminal AstNode     		 texpr, predicate, match_args, header_eq, name;
+
+precedence right IMPLIES;
+precedence left OR;
+precedence left AND;
+precedence left UNTIL, RELEASE;
+precedence right ALWAYS, EVENTUALLY;
+precedence right NEXT;
+precedence left EQ;
+precedence left NEG;
+
+start with texpr;
+
+/*rules*/
+
+texpr ::=
+	texpr:t1 AND texpr:t2
+	{: RESULT = new BinaryTemporalOperator(BinaryTemporalType.and, t1, t2); :}
+	
+	| texpr:t1 OR texpr:t2
+	{: RESULT = new BinaryTemporalOperator(BinaryTemporalType.or, t1, t2); :}
+	
+	| texpr:t1 IMPLIES texpr:t2
+	{: RESULT = new BinaryTemporalOperator(BinaryTemporalType.implies, t1, t2); :}
+	
+	| texpr:t1 UNTIL texpr:t2
+	{: RESULT = new BinaryTemporalOperator(BinaryTemporalType.until, t1, t2); :}
+	
+	| texpr:t1 RELEASE texpr:t2
+	{: RESULT = new BinaryTemporalOperator(BinaryTemporalType.release, t1, t2); :}
+	
+	| ALWAYS LPAR texpr:t RPAR
+	{: RESULT = new UnaryTemporalOperator(UnaryTemporalType.always, t); :}
+	
+	| EVENTUALLY LPAR texpr:t RPAR
+	{: RESULT = new UnaryTemporalOperator(UnaryTemporalType.eventually, t); :}
+	
+	| NEXT LPAR texpr:t RPAR
+	{: RESULT = new UnaryTemporalOperator(UnaryTemporalType.next, t); :}
+	
+	| NEG texpr:t
+	{: RESULT = new UnaryTemporalOperator(UnaryTemporalType.neg, t); :}
+	
+	| LPAR texpr:t RPAR
+	{: RESULT = t; :}
+	
+	| predicate:p
+	{: RESULT = p; :}
+	;
+
+predicate ::= 
+	MATCH LPAR match_args:margs RPAR
+	{: RESULT = new Predicate(PredicateType.match, margs); :}
+	| DROP
+	{: RESULT = new Predicate(PredicateType.drop); :}
+	;
+
+match_args ::=
+	header_eq:he
+	{: RESULT = new Arguments(he); :}
+	
+	| header_eq:he COMMA match_args:m
+	{: RESULT = new Arguments(he, m); :}
+	;
+
+header_eq ::= 
+	name:n EQ INT:i
+	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new BigIntegerLiteral(i)); :};
+
+name ::= NAME:m
+		{: RESULT = new Name(m); :};	

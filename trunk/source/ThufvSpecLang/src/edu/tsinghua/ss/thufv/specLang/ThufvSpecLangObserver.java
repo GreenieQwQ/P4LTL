@@ -45,12 +45,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.swing.text.WrappedPlainView;
+
 import org.apache.commons.io.IOUtils;
 
 import ast.Event;
 import ast.Fsum;
 import ast.Function;
 import ast.FunctionCall;
+import ast.Predicate;
 import de.uni_freiburg.informatik.ultimate.boogie.DeclarationInformation;
 import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ASTType;
@@ -101,6 +104,8 @@ import de.uni_freiburg.informatik.ultimate.ltl2aut.ast.AstNode;
 import de.uni_freiburg.informatik.ultimate.ltl2aut.preferences.PreferenceInitializer;
 import edu.tsinghua.ss.thufv.specLang.parse.SpecLangLexer;
 import edu.tsinghua.ss.thufv.specLang.parse.SpecLangParser;
+import edu.tsinghua.ss.thufv.specLang.parse.P4LTLLexer;
+import edu.tsinghua.ss.thufv.specLang.parse.P4LTLParser;
 
 /**
  * This class reads a definition of a property in LTL and returns the AST of the description of the LTL formula as a
@@ -201,19 +206,69 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 //		System.out.println("Executed UtopiaSpecLang");
 	}
 	
-	private String compileP4LTLToLTL(String p4ltl) {
+	private String compileP4LTLToLTL(String p4ltl) throws Exception {
 		mLogger.info("Compiling formula: " + p4ltl);
 		// TODO: finish the process
 		String regular_ltl = p4ltl;
-//		AstNode p4ltlAst = p4ltl2Ast(p4ltl);
-//		instrumentBoogie(p4ltlAst);	// TODO: set a new method for freevars
+		// Testing
+		mLogger.info("---- Testing");
+		String testltl = "match(header1=3, header4=5) ==> drop";
+		AstNode p4ltlAst = p4ltl2Ast(testltl);
+		instrumentBoogie(p4ltlAst);	// TODO: set a new method for freevars
 //		regular_ltl = p4ltlAst.tostring();
 		mLogger.info("Compiled to formula: " + regular_ltl);
 		return regular_ltl;
 	}
 	
+	private AstNode p4ltl2Ast(String p4ltl) throws Exception {
+		mLogger.info(String.format("Parsing P4LTL Formula to AstNode: %s", p4ltl));
+		final InputStreamReader isReader = new InputStreamReader(IOUtils.toInputStream(p4ltl));
+		try {
+			P4LTLLexer lexer = new P4LTLLexer(isReader);		
+			AstNode spec = (AstNode) new P4LTLParser(lexer).parse().value;
+			mLogger.info("Successfully lexed and parsed: " + p4ltl);
+			return spec;
+		} catch (final Exception ex) {
+			mLogger.fatal("Exception during parsing of P4LTL formula: " + p4ltl, ex);
+			throw ex;
+		} 
+	}
+	
 	private void instrumentBoogie(AstNode p4ltlAst) {
+		mLogger.info("----Test: p4ltlAst.toString(): " + p4ltlAst.toString());
 		// TODO: fill this method
+		Unit newProg = unit;
+		ArrayList<Predicate> predicates = this.getPredicates(p4ltlAst, new ArrayList<Predicate>());
+		for(Predicate predicate: predicates)
+		{
+			mLogger.info("++++Test: found predicate " + predicate.toString());
+			if(predicate.getArgs() == null)
+			{
+				mLogger.info("++++Test: " + predicate.toString() + "has no argument");
+			}
+			else
+			{
+				ArrayList<AstNode> args = predicate.getArgs().getArgs();
+				for (int i = 0; i < args.size(); ++i)
+				{
+					mLogger.info("++++Test: position " + Integer.toString(i) + " arg is " + args.get(i).toString());
+				}
+			}
+			
+			mLogger.info("++++Test: We can use the info above for instrumenting");
+		}
+		
+	}
+	
+	private ArrayList<Predicate> getPredicates(AstNode p4ltlast, ArrayList<Predicate> predicates) {
+		if (p4ltlast instanceof Predicate) {
+			predicates.add((Predicate) p4ltlast);
+			return predicates;
+		}
+		for (AstNode child : p4ltlast.getOutgoingNodes()) {
+			this.getPredicates(child, predicates);
+		}
+		return predicates;
 	}
 	
 	private ArrayList<Event> getEvents(AstNode ltlplus, ArrayList<Event> events) {
