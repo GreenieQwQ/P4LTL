@@ -3,6 +3,7 @@ package ast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -61,10 +62,30 @@ public class Predicate extends AstNode {
 	}
 	
 	// getName of the instrumented Predicate in boogie
-	public String getName() {
-		String op = this.getOp();
-		// TODO: combine op + args
-		return op;
+	public String getBoogieName() {
+		String identifier = this.getOp();
+		if(args != null)
+		{
+			switch (getType()) {
+				case match:
+					// match_h1_v1_h2_v2....
+					identifier += "_";
+					for (AstNode arg: args.getArgs())
+					{
+						ExtendedComparativeOperator eq = (ExtendedComparativeOperator) arg;
+						for(AstNode eq_oprand: eq.getOutgoingNodes())
+						{
+							identifier += eq_oprand.toString() + "_";
+						}
+					}
+					identifier = identifier.substring(0, identifier.length()-1);	// pop last "_"
+					break;
+				default:
+					break;
+			}
+			
+		}
+		return identifier;
 	}
 	
 	public Arguments getArgs() {

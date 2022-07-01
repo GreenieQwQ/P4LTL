@@ -216,6 +216,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		AstNode p4ltlAst = p4ltl2Ast(testltl);
 		instrumentBoogie(p4ltlAst);	// TODO: set a new method for freevars
 //		regular_ltl = p4ltlAst.tostring();
+		mLogger.info("---- Test Done.....");
 		mLogger.info("Compiled to formula: " + regular_ltl);
 		return regular_ltl;
 	}
@@ -254,7 +255,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					mLogger.info("++++Test: position " + Integer.toString(i) + " arg is " + args.get(i).toString());
 				}
 			}
-			
+			mLogger.info("++++Test: Correspoding Boogie identifier is: " + predicate.getBoogieName());
 			mLogger.info("++++Test: We can use the info above for instrumenting");
 		}
 		
