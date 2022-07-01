@@ -45,7 +45,7 @@ public class Predicate extends AstNode {
 
 	@Override
 	public String toString() {
-		// String str = "AP(" + this.getName() + ")";
+		// String str = "AP(" + this.getBoogieName() + ")";
 		// original string
 		String str = this.getOp();
 		if(args != null)
@@ -69,6 +69,7 @@ public class Predicate extends AstNode {
 			switch (getType()) {
 				case match:
 					// match_h1_v1_h2_v2....
+					// TODO: fix arg order
 					identifier += "_";
 					for (AstNode arg: args.getArgs())
 					{
