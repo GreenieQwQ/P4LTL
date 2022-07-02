@@ -45,19 +45,19 @@ public class Predicate extends AstNode {
 
 	@Override
 	public String toString() {
-		// String str = "AP(" + this.getBoogieName() + ")";
+		String str = "AP(" + this.getBoogieName() + ")";
 		// original string
-		String str = this.getOp();
-		if(args != null)
-		{
-			str += "(";
-			for (AstNode arg: args.getArgs())
-			{
-				str += arg.toString() + ",";
-			}
-			str = str.substring(0, str.length()-1);	// pop last ","
-			str += ")";
-		}
+//		String str = this.getOp();
+//		if(args != null)
+//		{
+//			str += "(";
+//			for (AstNode arg: args.getArgs())
+//			{
+//				str += arg.toString() + ",";
+//			}
+//			str = str.substring(0, str.length()-1);	// pop last ","
+//			str += ")";
+//		}
 		return str;
 	}
 	

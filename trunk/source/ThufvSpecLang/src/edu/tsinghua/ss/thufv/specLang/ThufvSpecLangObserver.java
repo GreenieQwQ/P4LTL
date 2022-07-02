@@ -54,6 +54,7 @@ import ast.Fsum;
 import ast.Function;
 import ast.FunctionCall;
 import ast.Predicate;
+import ast.PredicateType;
 import de.uni_freiburg.informatik.ultimate.boogie.DeclarationInformation;
 import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ASTType;
@@ -208,15 +209,9 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 	
 	private String compileP4LTLToLTL(String p4ltl) throws Exception {
 		mLogger.info("Compiling formula: " + p4ltl);
-		// TODO: finish the process
-		String regular_ltl = p4ltl;
-		// Testing
-		mLogger.info("---- Testing");
-		String testltl = "match(header1=3, header4=5) ==> drop";
-		AstNode p4ltlAst = p4ltl2Ast(testltl);
+		AstNode p4ltlAst = p4ltl2Ast(p4ltl);
 		instrumentBoogie(p4ltlAst);	// TODO: set a new method for freevars
-//		regular_ltl = p4ltlAst.tostring();
-		mLogger.info("---- Test Done.....");
+		String regular_ltl = p4ltlAst.toString();
 		mLogger.info("Compiled to formula: " + regular_ltl);
 		return regular_ltl;
 	}
@@ -236,13 +231,21 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 	}
 	
 	private void instrumentBoogie(AstNode p4ltlAst) {
-		mLogger.info("----Test: p4ltlAst.toString(): " + p4ltlAst.toString());
 		// TODO: fill this method
 		Unit newProg = unit;
 		ArrayList<Predicate> predicates = this.getPredicates(p4ltlAst, new ArrayList<Predicate>());
 		for(Predicate predicate: predicates)
 		{
-			mLogger.info("++++Test: found predicate " + predicate.toString());
+			switch (predicate.getType()) {
+				case match:
+					addGlobalVar(predicate.getBoogieName(), "bool", newProg);
+					mLogger.info("Add global declaration: " + predicate.getBoogieName());
+					break;
+				default:
+					break;
+			}
+			
+			
 			if(predicate.getArgs() == null)
 			{
 				mLogger.info("++++Test: " + predicate.toString() + "has no argument");

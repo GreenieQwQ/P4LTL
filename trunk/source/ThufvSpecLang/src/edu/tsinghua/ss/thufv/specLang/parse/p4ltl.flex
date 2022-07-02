@@ -37,7 +37,8 @@ ws     = {LineTerminator} | [ \t\f]
 
 Identifier =  [_a-zA-Z~][a-zA-Z0-9_~#\.]*
 Header = [_a-zA-Z~][a-zA-Z0-9_~#\.]*
-Int = [0-9]+
+DecIntegerLiteral = 0 | [1-9][0-9]*
+BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
  
 %%
 
@@ -67,13 +68,15 @@ Int = [0-9]+
 	{Identifier}    	{ return symbol(P4LTLSymbols.NAME, yytext()); }
  }
  <PREDICATE>{
-  	"("					{ return symbol(P4LTLSymbols.LPAR); }
-  	"="					{ return symbol(P4LTLSymbols.EQ); }
-  	")"					{ yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
-  	","					{ return symbol(P4LTLSymbols.COMMA); }
- 	{ws}    			{ /* ignore */ }
- 	{Header}	    	{ return symbol(P4LTLSymbols.NAME, yytext()); } 
- 	{Int}				{ return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }
+  	"("						{ return symbol(P4LTLSymbols.LPAR); }
+  	"="						{ return symbol(P4LTLSymbols.EQ); }
+  	"!="					{ return symbol(P4LTLSymbols.NEQ); }
+  	")"						{ yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
+  	","						{ return symbol(P4LTLSymbols.COMMA); }
+ 	{ws}    				{ /* ignore */ }
+ 	{Header}	    		{ return symbol(P4LTLSymbols.NAME, yytext()); }
+ 	{BvIntegerLiteral}		{ return symbol(P4LTLSymbols.BVINT, yytext()); }
+ 	{DecIntegerLiteral}		{ return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }
  }
 
  
