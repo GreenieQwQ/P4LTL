@@ -78,7 +78,7 @@ BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
   	"!="					{echoToken(yytext()); return symbol(P4LTLSymbols.NEQ); }
   	")"						{echoToken(yytext()); yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
   	","						{echoToken(yytext()); return symbol(P4LTLSymbols.COMMA); }
- 	{ws}    				{echoToken(yytext()); /* ignore */ }
+ 	{ws}    				{/* ignore */ }
  	{Header}	    		{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
  	{BvIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.BVINT, yytext()); }
  	{DecIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }

@@ -112,4 +112,6 @@ typora-copy-images-to: images
 
 ## Sugars
 
-- [插桩Boogie代码思路](./sugars)
+- [Smartpulse插桩Boogie代码思路](./sugars)
+- [添加新谓词的流程](./sugars)
+

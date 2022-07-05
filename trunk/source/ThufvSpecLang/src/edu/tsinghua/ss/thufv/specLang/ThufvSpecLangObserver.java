@@ -273,18 +273,22 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 				Procedure p = (Procedure) d;
 				String pname = p.getIdentifier();
 				Body b = p.getBody();
+				
+				// match
 				if (pname == "main" && p.getSpecification() != null)
 				{
 					for (Predicate predicate : predicates) {
-						this.addModifies(predicate.getBoogieName(), p);
+						if(predicate.getType() == PredicateType.match)
+							this.addModifies(predicate.getBoogieName(), p);
 					}
 				}
-				
 				if (pname == "main" && b != null) {
 					for (Predicate predicate : predicates) {
-						instrumentVariableSet(p, b, predicate);	
+						if(predicate.getType() == PredicateType.match)
+							instrumentVariableSet(p, b, predicate);	
 					}			
 				}
+				
 				
 				if(pname == "ULTIMATE.start")
 				{
@@ -294,7 +298,8 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 						{
 							initGlobalVar(b,predicate);
 						}
-					} else {
+					} 
+					if(p.getSpecification() != null) {
 						for(Predicate predicate: predicates)
 						{
 							this.addModifies(predicate.getBoogieName(), p);
