@@ -174,7 +174,7 @@ Declaration ::=
 		 * The specification. It is null for an implementation and
 		 * != null (but its length may be 0) for a procedure.
 		 */
-		specification: Specification[]
+		specification: &Specification[]
 		/**
 		 * The body.  If this is an implementation (getSpecification() returns null)
 		 * this must be present, otherwise it is optional.
@@ -376,7 +376,7 @@ Specification ::=
 	);
 
 Body ::=
-	localVars   : VariableDeclaration[]
+	localVars   : &VariableDeclaration[]
 	block       : &Statement[]
 	;
 

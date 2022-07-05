@@ -258,7 +258,7 @@ public class Expression2Term {
 			return translateFunctionApplication(((FunctionApplication) exp));
 		} else if (exp instanceof IdentifierExpression) {
 			final IdentifierExpression var = (IdentifierExpression) exp;
-			assert var.getDeclarationInformation() != null : " no declaration information";
+			assert var.getDeclarationInformation() != null : " no declaration information: " +  var.toString();
 			final Term result =
 					getSmtIdentifier(var.getIdentifier(), var.getDeclarationInformation(), isOldContext(), exp);
 			assert result != null;

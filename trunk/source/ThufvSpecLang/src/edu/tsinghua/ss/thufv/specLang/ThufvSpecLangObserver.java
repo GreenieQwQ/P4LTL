@@ -230,38 +230,121 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		} 
 	}
 	
-	private void instrumentBoogie(AstNode p4ltlAst) {
+	private void instrumentBoogie(AstNode p4ltlAst) throws Exception {
 		// TODO: fill this method
 		Unit newProg = unit;
 		ArrayList<Predicate> predicates = this.getPredicates(p4ltlAst, new ArrayList<Predicate>());
-		for(Predicate predicate: predicates)
+		for(int i = 0; i < predicates.size(); ++i)
 		{
+			Predicate predicate = predicates.get(i);
 			switch (predicate.getType()) {
 				case match:
 					addGlobalVar(predicate.getBoogieName(), "bool", newProg);
 					mLogger.info("Add global declaration: " + predicate.getBoogieName());
+					
 					break;
 				default:
+					predicates.remove(i); i--;
+					mLogger.info("Defalut: No need to instrument " + predicate.getBoogieName());
 					break;
 			}
 			
 			
-			if(predicate.getArgs() == null)
-			{
-				mLogger.info("++++Test: " + predicate.toString() + "has no argument");
-			}
-			else
-			{
-				ArrayList<AstNode> args = predicate.getArgs().getArgs();
-				for (int i = 0; i < args.size(); ++i)
-				{
-					mLogger.info("++++Test: position " + Integer.toString(i) + " arg is " + args.get(i).toString());
-				}
-			}
-			mLogger.info("++++Test: Correspoding Boogie identifier is: " + predicate.getBoogieName());
-			mLogger.info("++++Test: We can use the info above for instrumenting");
+//			if(predicate.getArgs() == null)
+//			{
+//				mLogger.info("++++Test: " + predicate.toString() + "has no argument");
+//			}
+//			else
+//			{
+//				ArrayList<AstNode> args = predicate.getArgs().getArgs();
+//				for (int i = 0; i < args.size(); ++i)
+//				{
+//					mLogger.info("++++Test: position " + Integer.toString(i) + " arg is " + args.get(i).toString());
+//				}
+//			}
+//			mLogger.info("++++Test: Correspoding Boogie identifier is: " + predicate.getBoogieName());
+//			mLogger.info("++++Test: We can use the info above for instrumenting");
 		}
 		
+		
+		boolean ultimateStartSet = false;
+		for (Declaration d : newProg.getDeclarations()) {
+			if (d instanceof Procedure) {
+				Procedure p = (Procedure) d;
+				String pname = p.getIdentifier();
+				Body b = p.getBody();
+				if (pname == "main" && p.getSpecification() != null)
+				{
+					for (Predicate predicate : predicates) {
+						this.addModifies(predicate.getBoogieName(), p);
+					}
+				}
+				
+				if (pname == "main" && b != null) {
+					for (Predicate predicate : predicates) {
+						instrumentVariableSet(p, b, predicate);	
+					}			
+				}
+				
+				if(pname == "ULTIMATE.start")
+				{
+					ultimateStartSet = true;
+					if(b != null) {
+						for(Predicate predicate: predicates)
+						{
+							initGlobalVar(b,predicate);
+						}
+					} else {
+						for(Predicate predicate: predicates)
+						{
+							this.addModifies(predicate.getBoogieName(), p);
+						}
+					}
+					
+				}
+			}
+		}
+		
+		// add ULTIMATE.start
+		if(!ultimateStartSet)
+		{
+			Body b = new Body(iloc, new VariableDeclaration[0], new Statement[0]);
+			Procedure p_nobody = new Procedure(iloc, new Attribute[0], "ULTIMATE.start", new String[0], new VarList[0], new VarList[0], new Specification[0], null);
+			Procedure main = this.fetchProcedure("mainProcedure");
+			p_nobody.setSpecification(main.getSpecification().clone());
+			for (Predicate predicate: predicates) {
+				initGlobalVar(b,predicate);
+				this.addModifies(predicate.getBoogieName(), p_nobody);
+			}
+			
+			CallStatement call = new CallStatement(iloc, false, new VariableLHS[0], "mainProcedure", new Expression[0]);
+			Statement[] call_block = {call};
+			Statement[] block = this.addStatementArrays(b.getBlock(), call_block, b.getBlock().length);
+			b.setBlock(block);
+			Procedure p_body = new Procedure(iloc, new Attribute[0], "ULTIMATE.start", new String[0], new VarList[0], new VarList[0], null, b);
+			Declaration[] decs = newProg.getDeclarations();
+			Declaration[] new_decs = new Declaration[decs.length+2];
+			for (int i = 0; i < decs.length; i++) {
+				new_decs[i] = decs[i];
+			}
+			new_decs[decs.length] = p_nobody;
+			new_decs[decs.length+1] = p_body;
+			newProg.setDeclarations(new_decs);
+		}
+	}
+	
+	private Procedure fetchProcedure(String name) {
+		for (Declaration d : unit.getDeclarations()) {
+			if (d instanceof Procedure) {
+				Procedure p = (Procedure) d;
+				String pname = p.getIdentifier();
+				if (pname.equals(name)) {
+					return p;
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	private ArrayList<Predicate> getPredicates(AstNode p4ltlast, ArrayList<Predicate> predicates) {
@@ -399,6 +482,60 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		}		
 	}
 	
+	private void instrumentVariableSet(Procedure p, Body b, Predicate predicate) throws Exception {
+		if (b != null) {
+			Statement[] stmts = b.getBlock();
+			String predicateName = predicate.getBoogieName();
+			switch (predicate.getType()) {
+				case match:
+					// get bool match expression
+					String exprString = "";
+					ArrayList<AstNode> args = predicate.getArgs().getArgs();
+					for (int i = 0; i < args.size(); ++i)
+					{
+						exprString += args.get(i).toString() + "&&";
+					}
+					exprString = exprString.substring(0, exprString.length()-2);
+					// get goto-based assignment
+					Statement[] assignStmts = getGotoAssignmentStmts(p, exprString, predicateName);
+					// get insert pos
+					int index = 0;
+					for (int i = 0; i < stmts.length; i++) {
+						Statement s = stmts[i];
+						if (s instanceof CallStatement) {
+							String mname = ((CallStatement) s).getMethodName();
+							if (mname.equals("havocProcedure")) {
+								index = i + 1;	// just behind havoc
+							}
+						}
+					}
+					stmts = this.addStatementArrays(stmts, assignStmts, index);
+					break;
+	
+				default:
+					break;
+			}
+			
+			b.setBlock(stmts);
+		}		
+	}
+	
+	private Statement[] getGotoAssignmentStmts(Procedure p, String exprString, String predicateName) {
+		Expression expr = getExpression(p, exprString);
+		Statement[] body = this.setFlag(predicateName);
+		String[] labels = {predicateName+"_true", predicateName+"_false"};
+		String[] end_labels = {predicateName+"_end"};
+		Statement gotoSplit = new GotoStatement(iloc, labels);
+		Statement trueLabel = new Label(iloc, labels[0]);
+		Statement assumeTrue = new AssumeStatement(iloc, expr);
+		Statement gotoEnd = new GotoStatement(iloc, end_labels);
+		Statement falseLabel = new Label(iloc, labels[1]);
+		Statement assumeFalse = new AssumeStatement(iloc, new UnaryExpression(iloc, UnaryExpression.Operator.LOGICNEG, expr));
+		Statement endLabel = new Label(iloc, end_labels[0]);
+		Statement[] stmts = {gotoSplit, trueLabel, assumeTrue, body[0], gotoEnd, falseLabel, assumeFalse, body[1], endLabel};
+		return stmts;
+	}
+	
 	private void initGlobalVar(Body b, Event e) throws Exception {
 		Statement[] stmts = b.getBlock();
 		Statement assnFalse = this.buildAssignment(e.getName(), "false");
@@ -410,6 +547,14 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 	private void initGlobalVar(Body b, Fsum f) throws Exception {
 		Statement[] stmts = b.getBlock();
 		Statement assnFalse = this.zeroInit(f.getVarName());
+		Statement[] assns = {assnFalse};
+		stmts = this.addToStmts2(stmts, assns, "begin", "", "");
+		b.setBlock(stmts);
+	}
+	
+	private void initGlobalVar(Body b, Predicate p) throws Exception {
+		Statement[] stmts = b.getBlock();
+		Statement assnFalse = this.buildAssignment(p.getBoogieName(), "false");
 		Statement[] assns = {assnFalse};
 		stmts = this.addToStmts2(stmts, assns, "begin", "", "");
 		b.setBlock(stmts);
@@ -476,7 +621,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			if (d instanceof Procedure) {
 				Procedure p = (Procedure) d;
 				String pname = p.getIdentifier();
-
+				// System.out.println("Procedure: " + pname);
 				if (pname.equals(name)) {
 					if (p.getBody() == null || !spec_ver) {
 						return p;
@@ -494,9 +639,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		VariableLHS[] vls = {vlhs};
 		specs.add(new ModifiesSpecification(iloc, false, vls));
 		Specification[] spec_arr = (Specification[]) specs.toArray(p.getSpecification());
-		// missing in smartpulse
-		// TODO: recover
-		// p.setSpecification(spec_arr);
+		p.setSpecification(spec_arr);
 	}
 	
 	private Unit initializeFSums(ArrayList<Fsum> fsums, Unit prog) {
@@ -692,9 +835,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			Body b = new Body(iloc, new VariableDeclaration[0], new Statement[0]);
 			Procedure p_nobody = new Procedure(iloc, new Attribute[0], "ULTIMATE.start", new String[0], new VarList[0], new VarList[0], new Specification[0], null);
 			Procedure main = this.fetchProcedure("main", true);
-			// missing in smartpulse
-			// TODO: recover
-			// p_nobody.setSpecification(main.getSpecification().clone());
+			p_nobody.setSpecification(main.getSpecification().clone());
 			for (Event e: events) {
 				initGlobalVar(b,e);
 				this.addModifies(e.getName(), p_nobody);
@@ -769,6 +910,15 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		final Expression bExpr = stmt.getRhs()[0];
 		final Expression newBExpr = bExpr.accept(new DeclarationInformationAdder(p, real_args, func_vars, currentEvent));
 		mLogger.info("Parsed " + expr + " to " + newBExpr.toString());
+		return newBExpr;		
+	}
+	
+	private Expression getExpression(Procedure p, String expr) {
+		Procedure proc = this.parseStringToProcedure("#thevar := "+expr+";");
+		final AssignmentStatement stmt = (AssignmentStatement) proc.getBody().getBlock()[0];
+		final Expression bExpr = stmt.getRhs()[0];
+		final Expression newBExpr = bExpr.accept(new P4LTL_DeclarationInformationAdder(p));
+		mLogger.info("Parsed expression string \"" + expr + "\" to expression node " + newBExpr.toString());
 		return newBExpr;		
 	}
 	
@@ -942,9 +1092,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			if (func_call_var_decs.length > 0) {
 				VariableDeclaration[] old_var_decs = b.getLocalVars();
 				VariableDeclaration[] new_var_decs = this.addVarDecArrays(func_call_var_decs, old_var_decs, func_call_var_decs.length-1);
-				// missing impl in smartpulse
-				// TODO: recover
-				// b.setLocalVars(new_var_decs);
+				b.setLocalVars(new_var_decs);
 			}
 		}
 				
@@ -1481,5 +1629,43 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		}
 	}
 
+	
+	private static final class P4LTL_DeclarationInformationAdder extends GeneratedBoogieAstTransformer {
+		private Procedure procedure;
+		private String pname;
+	
+		public P4LTL_DeclarationInformationAdder(Procedure p) {
+			super();
+			this.procedure = p;
+			this.pname = p.getIdentifier();
+		}
+		
+		private DeclarationInformation getDeclInfo (String id) {
+			DeclarationInformation declinfo = DeclarationInformation.DECLARATIONINFO_GLOBAL;
+			for(VarList vl : procedure.getOutParams()) {
+				for(String identifier : vl.getIdentifiers()) {
+					if(identifier.equals(id)) {
+						declinfo = new DeclarationInformation(DeclarationInformation.StorageClass.IMPLEMENTATION_OUTPARAM, pname);
+						break;
+					}
+				}
+			}
+			return declinfo;
+		}
+		
+		@Override 
+		public VariableLHS transform(final VariableLHS node) {
+			String id = node.getIdentifier();
+			DeclarationInformation declinfo = this.getDeclInfo(id);
+			return new VariableLHS(node.getLocation(), node.getType(), id, declinfo);
+		}
+		
+		@Override
+		public Expression transform(final IdentifierExpression node) {
+			String id = node.getIdentifier();
+			DeclarationInformation declinfo = this.getDeclInfo(id);
+			return new IdentifierExpression(node.getLocation(), node.getType(), id, declinfo);
+		}
+	}
 }
 

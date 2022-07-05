@@ -5,7 +5,9 @@ typora-copy-images-to: images
 ## Build
 
 - 参考[Installation · ultimate-pa/ultimate Wiki](https://github.com/ultimate-pa/ultimate/wiki/Installation)的build方案
-- 注意在打开target编译前记得配置preference-java-compile选项，将编译器设置为jdk：![image-20220625170111681](images/image-20220625170111681.png)
+- 注1：注意在打开target编译前记得配置preference-java-compile选项，将编译器设置为jdk：![image-20220625170111681](images/image-20220625170111681.png)
+- 注2：可能需要在`ant-properties-classpath`中增加缺少的jar文件
+- 注3：若出现maven相关的错误，可以考虑在`preference-maven-user settings`中将源更换为国内源
 
 ## 每个插件共有的接口
 

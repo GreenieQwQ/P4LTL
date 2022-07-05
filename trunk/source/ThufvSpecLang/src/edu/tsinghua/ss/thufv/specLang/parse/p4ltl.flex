@@ -2,6 +2,7 @@ package edu.tsinghua.ss.thufv.specLang.parse;
 
 import com.github.jhoenicke.javacup.runtime.*;
 import java.math.BigInteger;
+import java.util.*;
 
 %%
 
@@ -23,12 +24,16 @@ import java.math.BigInteger;
   private Symbol symbol(int type, Object value) {
     return new Symbol(type, yyline, yycolumn, value);
   }
-    private Symbol symbol(int type, String value) {
+	private Symbol symbol(int type, String value) {
     return new Symbol(type, yyline, yycolumn, value);
   }
   
       private Symbol symbol(int type, int value) {
     return new Symbol(type, yyline, yycolumn, value);
+  }
+  private void echoToken(String text)
+  {
+  	// System.out.println("Token: " + text);
   }
 %} 
 
@@ -47,38 +52,37 @@ BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
  */
 
 <YYINITIAL>{ 
-	"("					{ return symbol(P4LTLSymbols.LPAR); }
-	")"					{ return symbol(P4LTLSymbols.RPAR); }
+	"("					{echoToken(yytext()); return symbol(P4LTLSymbols.LPAR); }
+	")"					{echoToken(yytext()); return symbol(P4LTLSymbols.RPAR); }
 	
- 	"match"				{ yybegin(PREDICATE); return symbol(P4LTLSymbols.MATCH); }
- 	"drop"				{ return symbol(P4LTLSymbols.DROP); }
+ 	"match"				{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.MATCH); }
+ 	"drop"				{echoToken(yytext()); return symbol(P4LTLSymbols.DROP); }
 	
-	"[]"				{ return symbol(P4LTLSymbols.ALWAYS); }
-	"<>"				{ return symbol(P4LTLSymbols.EVENTUALLY); }
-	"U"					{ return symbol(P4LTLSymbols.UNTIL); }
-	"R"					{ return symbol(P4LTLSymbols.RELEASE); }
-	"&&"				{ return symbol(P4LTLSymbols.AND); }
-	"||"				{ return symbol(P4LTLSymbols.OR); }
-	"==>"				{ return symbol(P4LTLSymbols.IMPLIES); }
-	"X"					{ return symbol(P4LTLSymbols.NEXT); }
-	"!"					{ return symbol(P4LTLSymbols.NEG); }
+	"[]"				{echoToken(yytext()); return symbol(P4LTLSymbols.ALWAYS); }
+	"<>"				{echoToken(yytext()); return symbol(P4LTLSymbols.EVENTUALLY); }
+	"U"					{echoToken(yytext()); return symbol(P4LTLSymbols.UNTIL); }
+	"R"					{echoToken(yytext()); return symbol(P4LTLSymbols.RELEASE); }
+	"&&"				{echoToken(yytext()); return symbol(P4LTLSymbols.AND); }
+	"||"				{echoToken(yytext()); return symbol(P4LTLSymbols.OR); }
+	"=>"				{echoToken(yytext()); return symbol(P4LTLSymbols.IMPLIES); }
+	"X"					{echoToken(yytext()); return symbol(P4LTLSymbols.NEXT); }
+	"!"					{echoToken(yytext()); return symbol(P4LTLSymbols.NEG); }
 
-	{ws}    			{ /* ignore */ }
+	{ws}    			{/* ignore */ }
 	
-	{Identifier}    	{ return symbol(P4LTLSymbols.NAME, yytext()); }
+	{Identifier}    	{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
  }
  <PREDICATE>{
-  	"("						{ return symbol(P4LTLSymbols.LPAR); }
-  	"="						{ return symbol(P4LTLSymbols.EQ); }
-  	"!="					{ return symbol(P4LTLSymbols.NEQ); }
-  	")"						{ yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
-  	","						{ return symbol(P4LTLSymbols.COMMA); }
- 	{ws}    				{ /* ignore */ }
- 	{Header}	    		{ return symbol(P4LTLSymbols.NAME, yytext()); }
- 	{BvIntegerLiteral}		{ return symbol(P4LTLSymbols.BVINT, yytext()); }
- 	{DecIntegerLiteral}		{ return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }
+  	"("						{echoToken(yytext()); return symbol(P4LTLSymbols.LPAR); }
+  	"="						{echoToken(yytext()); return symbol(P4LTLSymbols.EQ); }
+  	"!="					{echoToken(yytext()); return symbol(P4LTLSymbols.NEQ); }
+  	")"						{echoToken(yytext()); yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
+  	","						{echoToken(yytext()); return symbol(P4LTLSymbols.COMMA); }
+ 	{ws}    				{echoToken(yytext()); /* ignore */ }
+ 	{Header}	    		{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
+ 	{BvIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.BVINT, yytext()); }
+ 	{DecIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }
  }
 
  
-<<EOF>>                 { return symbol(P4LTLSymbols.EOF); }
- 
+<<EOF>>                 {echoToken(yytext()); return symbol(P4LTLSymbols.EOF); }

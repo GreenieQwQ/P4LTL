@@ -1,2 +1,2 @@
-java -jar C:\Users\13566\Desktop\Projects\ultimate\trunk\source\JavaCup\JFlex.jar p4ltl.flex
-java -jar C:\Users\13566\Desktop\Projects\ultimate\trunk\source\JavaCup\jh-javacup-1.2.jar -parser "P4LTLParser" -symbols "P4LTLSymbols" < p4ltl.cup
+java -jar C:\Users\Greenie\Desktop\Project\P4LTL\trunk\source\JavaCup\JFlex.jar p4ltl.flex
+java -jar C:\Users\Greenie\Desktop\Project\P4LTL\trunk\source\JavaCup\jh-javacup-1.2.jar -parser "P4LTLParser" -symbols "P4LTLSymbols" < p4ltl.cup

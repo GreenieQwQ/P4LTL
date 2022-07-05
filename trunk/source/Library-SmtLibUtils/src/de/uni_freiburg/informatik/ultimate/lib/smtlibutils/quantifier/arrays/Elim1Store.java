@@ -337,7 +337,8 @@ public class Elim1Store {
 //				indexMapping, substitutionMapping, indexEqualityInformation);
 		if (Arrays.asList(transformedTerm.getFreeVars()).contains(eliminatee)) {
 			if (QuantifierUtils.isQuantifierFree(inputTerm)) {
-				throw new AssertionError("Unexpected substitution problem.");
+				throw new AssertionError("Unexpected substitution problem. Transformed: " + transformedTerm.toString() + " Input: " + inputTerm + 
+						"\ntransformedTerm.getFreeVars()): " + transformedTerm.getFreeVars().toString() + " eliminatee: " + eliminatee.toString());
 			}
 			throw new ElimStorePlain.ElimStorePlainException(ElimStorePlainException.CAPTURED_INDEX);
 		}

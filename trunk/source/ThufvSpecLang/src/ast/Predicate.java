@@ -96,4 +96,12 @@ public class Predicate extends AstNode {
 	public PredicateType getType() {
 		return type;
 	}
+	
+//	@Override
+//	public boolean euqals(Object o) {
+//		if(this == o) return true;
+//		if(o == null || getClass() != o.getClass()) return false;
+//		Predicate p = (Predicate) o;
+//		return this.getBoogieName() == p.getBoogieName();
+//	}
 }

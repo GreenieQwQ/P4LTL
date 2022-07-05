@@ -66,7 +66,7 @@ public class BoogiePrinter implements IOutput {
 
 	@Override
 	public ModelQuery getModelQuery() {
-		return ModelQuery.LAST;
+		return ModelQuery.ALL;
 	}
 
 	@Override
