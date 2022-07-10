@@ -37,6 +37,14 @@ public class ExtendedComparativeOperator extends AstNode {
 			default:
 				throw new IllegalArgumentException();
 		}
+
+		// It should be guarded by Jflex and Javacup that it is an header equation: header = mask
+		if(getOutgoingNodes().get(1) instanceof IPMask)
+		{
+			IPMask mask = (IPMask) getOutgoingNodes().get(1);
+			String maskString = "[32:" + mask.getLSB() + "]";
+			return getOutgoingNodes().get(0).toString() + maskString + op + getOutgoingNodes().get(1).toString() + maskString;
+		}
 		
 		return getOutgoingNodes().get(0).toString() + op + getOutgoingNodes().get(1).toString();
 	}

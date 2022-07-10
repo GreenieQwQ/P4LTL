@@ -9,6 +9,12 @@ typora-copy-images-to: images
 - 注2：可能需要在`ant-properties-classpath`中增加缺少的jar文件
 - 注3：若出现maven相关的错误，可以考虑在`preference-maven-user settings`中将源更换为国内源
 
+## Sugars
+
+- [Smartpulse插桩Boogie代码思路](./sugars)
+- [添加新谓词的流程](./sugars)
+- [插桩规则](./sugars)
+
 ## 每个插件共有的接口
 
 - Activator
@@ -109,9 +115,4 @@ typora-copy-images-to: images
 - Exp:
 
   - example: `match(header=IPV4) => drop`
-
-## Sugars
-
-- [Smartpulse插桩Boogie代码思路](./sugars)
-- [添加新谓词的流程](./sugars)
 

@@ -33,7 +33,7 @@ import java.util.*;
   }
   private void echoToken(String text)
   {
-  	// System.out.println("Token: " + text);
+  	System.out.println("Token: " + text);
   }
 %} 
 
@@ -44,7 +44,12 @@ Identifier =  [_a-zA-Z~][a-zA-Z0-9_~#\.]*
 Header = [_a-zA-Z~][a-zA-Z0-9_~#\.]*
 DecIntegerLiteral = 0 | [1-9][0-9]*
 BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
- 
+Digit = [0-9]
+IPInt = 0|1{Digit}?{Digit}?|2[0-4]?{Digit}?|25[0-5]?|[3-9]{Digit}?
+IP = ({IPInt}\.){3}({IPInt})
+MaskInt = 0|[1-2]{Digit}?|3[0-2]|[4-9]
+IPMask = {IP} "/" {MaskInt}
+
 %%
 
 /**
@@ -56,6 +61,7 @@ BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
 	")"					{echoToken(yytext()); return symbol(P4LTLSymbols.RPAR); }
 	
  	"match"				{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.MATCH); }
+ 	"modify"			{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.MODIFY); }
  	"drop"				{echoToken(yytext()); return symbol(P4LTLSymbols.DROP); }
 	
 	"[]"				{echoToken(yytext()); return symbol(P4LTLSymbols.ALWAYS); }
@@ -81,6 +87,7 @@ BvIntegerLiteral = {DecIntegerLiteral} "bv" {DecIntegerLiteral}
  	{ws}    				{/* ignore */ }
  	{Header}	    		{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
  	{BvIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.BVINT, yytext()); }
+ 	{IPMask}				{echoToken(yytext()); return symbol(P4LTLSymbols.IPMASK, yytext()); }
  	{DecIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.INT, new BigInteger(yytext())); }
  }
 

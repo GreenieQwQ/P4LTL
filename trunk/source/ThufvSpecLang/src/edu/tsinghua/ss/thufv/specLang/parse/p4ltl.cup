@@ -10,8 +10,8 @@ parser P4LTLParser;
 option symbols=P4LTLSymbols;
 
 /* exprinals (tokens returned by the scanner). */
-terminal           	LPAR, RPAR, MATCH, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA;
-terminal String 			NAME, BVINT;
+terminal           	LPAR, RPAR, MATCH, MODIFY, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA;
+terminal String 			NAME, BVINT, IPMASK;
 terminal BigInteger 		INT;
 
 /* Non-exprinals */
@@ -68,6 +68,8 @@ texpr ::=
 predicate ::= 
 	MATCH LPAR match_args:margs RPAR
 	{: RESULT = new Predicate(PredicateType.match, margs); :}
+	| MODIFY LPAR match_args:margs RPAR
+	{: RESULT = new Predicate(PredicateType.modify, margs); :}
 	| DROP
 	{: RESULT = new Predicate(PredicateType.drop); :}
 	;
@@ -85,10 +87,11 @@ header_eq ::=
 	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new BitVec(bvi)); :}
 	| name:n NEQ BVINT:bvi
 	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, new BitVec(bvi)); :}
-	| name:n EQ INT:i
-	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new BigIntegerLiteral(i)); :}
-	| name:n NEQ INT:i
-	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, new BigIntegerLiteral(i)); :}
+	| name:n EQ IPMASK:ip
+	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new IPMask(ip)); :}
+	| name:n NEQ IPMASK:ip
+	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, new IPMask(ip)); :}
+
 	;
 
 name ::= NAME:m

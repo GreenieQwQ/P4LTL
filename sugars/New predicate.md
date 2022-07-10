@@ -30,6 +30,7 @@ typora-copy-images-to: ..\images
        - 向`PREDICATE`状态添加谓词参数的分词
      - `p4ltl.cup`
        - 向`predicate`非终结符号添加新谓词的语法分析和相应参数的语法分析
+     - 运行`p4ltl.bat`生成新的parser
 
 3. 插桩代码的修改
 

@@ -1,5 +1,5 @@
 //#LTLProperty: (match(hdr.ethernet.etherType != 2048bv16, hdr.ipv4.protocol = 17bv8) => drop)
-//#LTLFairness: <>(match(hdr.ipv4.protocol=17bv8))
+//#LTLFairness: <>(match(hdr.ipv4.srcAddr=127.0.0.1/24))
 type Ref;
 type error=bv1;
 type HeaderStack = [int]Ref;
