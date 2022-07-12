@@ -49,6 +49,7 @@ import javax.swing.text.WrappedPlainView;
 
 import org.apache.commons.io.IOUtils;
 
+import ast.BinaryBitVecOperator;
 import ast.Event;
 import ast.Fsum;
 import ast.Function;
@@ -69,6 +70,8 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.IntegerLiteral;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Declaration;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionApplication;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionDeclaration;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.GeneratedBoogieAstTransformer;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.GotoStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
@@ -94,6 +97,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.preprocessor.PreprocessorAnnot
 import de.uni_freiburg.informatik.ultimate.boogie.symboltable.BoogieSymbolTable;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieType;
+import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IElement;
 import de.uni_freiburg.informatik.ultimate.core.model.models.ILocation;
 import de.uni_freiburg.informatik.ultimate.core.model.models.ModelType;
@@ -238,6 +242,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		{
 			Predicate predicate = predicates.get(i);
 			switch (predicate.getType()) {
+				case modify:
 				case match:
 					addGlobalVar(predicate.getBoogieName(), "bool", newProg);
 					mLogger.info("Add global declaration: " + predicate.getBoogieName());
@@ -248,43 +253,49 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					mLogger.info("Defalut: No need to instrument " + predicate.getBoogieName());
 					break;
 			}
-			
-			
-//			if(predicate.getArgs() == null)
-//			{
-//				mLogger.info("++++Test: " + predicate.toString() + "has no argument");
-//			}
-//			else
-//			{
-//				ArrayList<AstNode> args = predicate.getArgs().getArgs();
-//				for (int i = 0; i < args.size(); ++i)
-//				{
-//					mLogger.info("++++Test: position " + Integer.toString(i) + " arg is " + args.get(i).toString());
-//				}
-//			}
-//			mLogger.info("++++Test: Correspoding Boogie identifier is: " + predicate.getBoogieName());
-//			mLogger.info("++++Test: We can use the info above for instrumenting");
 		}
 		
+		// get bitvec operations to add
+		ArrayList<BinaryBitVecOperator> binBitVecOps = this.getBinBitVecOp(p4ltlAst, new ArrayList<BinaryBitVecOperator>());
+		HashSet<String> bitOp2Add = new HashSet<String>();
+		for(int i = 0; i < binBitVecOps.size(); ++i)
+		{
+			BinaryBitVecOperator binBitVecOp = binBitVecOps.get(i);
+			String bitVecOperation = binBitVecOp.getBitOp();
+			bitOp2Add.add(bitVecOperation);
+			mLogger.info("Found binBitVecOp: " + binBitVecOp);
+		}
 		
+		// instrument variable set
 		boolean ultimateStartSet = false;
 		for (Declaration d : newProg.getDeclarations()) {
+			if(d instanceof FunctionDeclaration)
+			{
+				String identifier = ((FunctionDeclaration)d).getIdentifier();
+				if(bitOp2Add.contains(identifier))
+				{
+					mLogger.info("BitVec operation is already present: " + identifier);
+					bitOp2Add.remove(identifier);
+				}
+//				mLogger.info("----Func: " + ((FunctionDeclaration)d));
+			}
+			
 			if (d instanceof Procedure) {
 				Procedure p = (Procedure) d;
 				String pname = p.getIdentifier();
 				Body b = p.getBody();
 				
-				// match
+				// match and modify
 				if (pname == "main" && p.getSpecification() != null)
 				{
 					for (Predicate predicate : predicates) {
-						if(predicate.getType() == PredicateType.match)
+						if(predicate.getType() == PredicateType.match || predicate.getType() == PredicateType.modify)
 							this.addModifies(predicate.getBoogieName(), p);
 					}
 				}
 				if (pname == "main" && b != null) {
 					for (Predicate predicate : predicates) {
-						if(predicate.getType() == PredicateType.match)
+						if(predicate.getType() == PredicateType.match || predicate.getType() == PredicateType.modify)
 							instrumentVariableSet(p, b, predicate);	
 					}			
 				}
@@ -308,6 +319,28 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					
 				}
 			}
+		}
+		
+		// add Bitvec operations
+		for(String bitOpIdentifier: bitOp2Add)
+		{
+			// form declaration
+			Expression[] bvOp = new Expression[] {new StringLiteral(iloc, bitOpIdentifier.contains("add") ? "bvadd" : "bvsub")};
+			NamedAttribute bvOpAttr = new NamedAttribute(iloc, "bvbuiltin", bvOp);
+			VarList[] inParams = new VarList[2];
+			int bitLength = Integer.parseInt(bitOpIdentifier.substring(bitOpIdentifier.indexOf("bv") + 2));
+			BoogieType bvType = BoogieType.createBitvectorType(bitLength);
+			PrimitiveType primitiveType = new PrimitiveType(iloc, bvType, bvType.toString());
+			inParams[0] = new VarList(iloc, new String[]{"left"}, primitiveType);
+			inParams[1] = new VarList(iloc, new String[]{"right"}, primitiveType);
+			VarList outParam = new VarList(iloc, new String[0], primitiveType); 
+			FunctionDeclaration functionDecl = new FunctionDeclaration(iloc, new Attribute[] {bvOpAttr}, bitOpIdentifier, new String[0], inParams, outParam);
+			// add to symbol table and new prog
+			Declaration[] new_decs = copyToBiggerDec(newProg.getDeclarations());
+			new_decs[0] = functionDecl;
+			newProg.setDeclarations(new_decs);
+			symbolTable.addProcedureOrFunction(bitOpIdentifier, functionDecl);
+			mLogger.info("Add BitVec operation function: " + functionDecl);
 		}
 		
 		// add ULTIMATE.start
@@ -350,6 +383,17 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		}
 		
 		return null;
+	}
+	
+	private ArrayList<BinaryBitVecOperator> getBinBitVecOp(AstNode p4ltlast, ArrayList<BinaryBitVecOperator> binBitVecOps)
+	{
+		if (p4ltlast instanceof BinaryBitVecOperator) {
+			binBitVecOps.add((BinaryBitVecOperator) p4ltlast);
+		}
+		for (AstNode child : p4ltlast.getOutgoingNodes()) {
+			this.getBinBitVecOp(child, binBitVecOps);
+		}
+		return binBitVecOps;
 	}
 	
 	private ArrayList<Predicate> getPredicates(AstNode p4ltlast, ArrayList<Predicate> predicates) {
@@ -492,6 +536,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			Statement[] stmts = b.getBlock();
 			String predicateName = predicate.getBoogieName();
 			switch (predicate.getType()) {
+				case modify:
 				case match:
 					// get bool match expression
 					String exprString = "";
@@ -504,17 +549,25 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					// get goto-based assignment
 					Statement[] assignStmts = getGotoAssignmentStmts(p, exprString, predicateName);
 					// get insert pos
-					int index = 0;
-					for (int i = 0; i < stmts.length; i++) {
-						Statement s = stmts[i];
-						if (s instanceof CallStatement) {
-							String mname = ((CallStatement) s).getMethodName();
-							if (mname.equals("havocProcedure")) {
-								index = i + 1;	// just behind havoc
+					if(predicate.getType() == PredicateType.modify)
+					{
+						// the last stmt is `return;`
+						stmts = this.addStatementArrays(stmts, assignStmts, stmts.length-1);
+					}
+					else if(predicate.getType() == PredicateType.match)
+					{
+						int index = 0;
+						for (int i = 0; i < stmts.length; i++) {
+							Statement s = stmts[i];
+							if (s instanceof CallStatement) {
+								String mname = ((CallStatement) s).getMethodName();
+								if (mname.equals("havocProcedure")) {
+									index = i + 1;	// just behind havoc
+								}
 							}
 						}
+						stmts = this.addStatementArrays(stmts, assignStmts, index);
 					}
-					stmts = this.addStatementArrays(stmts, assignStmts, index);
 					break;
 	
 				default:
@@ -1657,6 +1710,33 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			}
 			return declinfo;
 		}
+		
+		@Override
+	    public Expression transform(FunctionApplication node) {
+			String funcName = node.getIdentifier();
+//			System.out.println("=== identifier is: " + node.getIdentifier()
+//			+ " Type is: " + node.getType());
+			if(funcName.startsWith("add.bv") || funcName.startsWith("minus.bv"))
+			{
+				int length = Integer.parseInt(funcName.substring(funcName.indexOf("bv") + 2));
+				BoogieType bvType = BoogieType.createBitvectorType(length);
+				// System.out.println("=== Set type to " + bvType);
+				Expression[] newArgs = node.getArguments();
+				for(int i = 0; i < newArgs.length; ++i)
+				{
+					newArgs[i] = newArgs[i].accept(this);
+					newArgs[i].setType(bvType);
+					// System.out.println("===" + newArgs[i] + ": Set type to " + newArgs[i].getType());
+				}
+//				for(Expression e: newArgs)
+//				{
+//					System.out.println("===" + e + ": type is " + e.getType());
+//				}
+				return new FunctionApplication(node.getLoc(), bvType, node.getIdentifier(), newArgs);
+			}
+			
+	        return node;
+	    }
 		
 		@Override 
 		public VariableLHS transform(final VariableLHS node) {

@@ -322,6 +322,7 @@ public class Boogie2SmtSymbolTable
 	}
 
 	public Map<String, Expression[]> getAttributes(final String boogieFunctionId) {
+		// System.out.println("===== Testing: " + boogieFunctionId);
 		return Collections.unmodifiableMap(mBoogieFunction2Attributes.get(boogieFunctionId));
 	}
 

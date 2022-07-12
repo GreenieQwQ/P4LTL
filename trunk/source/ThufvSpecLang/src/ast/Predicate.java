@@ -20,7 +20,7 @@ public class Predicate extends AstNode {
     public Predicate(PredicateType type, final AstNode args) throws Exception{
     	this.type = type;
     	this.args = (Arguments) args;
-    	// this.addOutgoing(args);
+		this.addOutgoing(args);
     }
     
 	public Predicate(final PredicateType type) throws Exception {
@@ -36,6 +36,9 @@ public class Predicate extends AstNode {
 				break;
 			case drop:
 				op = "drop";
+				break;
+			case modify:
+				op = "modify";
 				break;
 			default:
 				throw new IllegalArgumentException();
@@ -67,6 +70,7 @@ public class Predicate extends AstNode {
 		if(args != null)
 		{
 			switch (getType()) {
+				case modify:
 				case match:
 					// match_h1_v1_h2_v2....
 					// TODO: fix arg order
@@ -76,7 +80,7 @@ public class Predicate extends AstNode {
 						ExtendedComparativeOperator eq = (ExtendedComparativeOperator) arg;
 						for(AstNode eq_oprand: eq.getOutgoingNodes())
 						{
-							identifier += eq_oprand.toString() + "_";
+							identifier += normalizeString(eq_oprand.toString()) + "_";
 						}
 					}
 					identifier = identifier.substring(0, identifier.length()-1);	// pop last "_"
@@ -87,6 +91,12 @@ public class Predicate extends AstNode {
 			
 		}
 		return identifier;
+	}
+	
+	// normalize string
+	private static String normalizeString(String s)
+	{
+		return s.replace('(', '_').replace(',', '_').replace(" ", "").replace(")", "");
 	}
 	
 	public Arguments getArgs() {

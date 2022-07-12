@@ -10,12 +10,12 @@ parser P4LTLParser;
 option symbols=P4LTLSymbols;
 
 /* exprinals (tokens returned by the scanner). */
-terminal           	LPAR, RPAR, MATCH, MODIFY, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA;
+terminal           	LPAR, RPAR, MATCH, MODIFY, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA, OLD, PLUS, MINUS;
 terminal String 			NAME, BVINT, IPMASK;
 terminal BigInteger 		INT;
 
 /* Non-exprinals */
-non terminal AstNode     		 texpr, predicate, match_args, header_eq, name;
+non terminal AstNode     		 texpr, predicate, match_args, header_eq, name, expr;
 
 precedence right IMPLIES;
 precedence left OR;
@@ -24,6 +24,7 @@ precedence left UNTIL, RELEASE;
 precedence right ALWAYS, EVENTUALLY;
 precedence right NEXT;
 precedence left EQ, NEQ;
+precedence left PLUS, MINUS;
 precedence left NEG;
 
 start with texpr;
@@ -83,15 +84,27 @@ match_args ::=
 	;
 
 header_eq ::= 
-	name:n EQ BVINT:bvi
-	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new BitVec(bvi)); :}
-	| name:n NEQ BVINT:bvi
-	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, new BitVec(bvi)); :}
+	name:n EQ expr:e
+	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, e); :}
+	| name:n NEQ expr:e
+	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, e); :}
 	| name:n EQ IPMASK:ip
 	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.eq, n, new IPMask(ip)); :}
 	| name:n NEQ IPMASK:ip
 	{: RESULT = new ExtendedComparativeOperator(ExtendedComparativeType.neq, n, new IPMask(ip)); :}
+	;
 
+expr ::=
+	BVINT:bvi
+	{: RESULT = new BitVec(bvi); :}
+	| name:n
+	{: RESULT = n; :}
+	| expr:e1 PLUS expr:e2
+	{: RESULT = new BinaryBitVecOperator(BinaryType.plus, e1, e2); :}
+	| expr:e1 MINUS expr:e2
+	{: RESULT = new BinaryBitVecOperator(BinaryType.minus, e1, e2); :}
+	| OLD LPAR expr:e RPAR
+	{: RESULT = new UnaryBitVecOperator(UnaryTemporalType.old, e); :}
 	;
 
 name ::= NAME:m

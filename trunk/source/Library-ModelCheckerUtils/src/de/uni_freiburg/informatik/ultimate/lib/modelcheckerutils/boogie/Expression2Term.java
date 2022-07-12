@@ -383,6 +383,8 @@ public class Expression2Term {
 
 			final Sort[] params = new Sort[func.getArguments().length];
 			for (int i = 0; i < func.getArguments().length; i++) {
+//				System.out.println("=== Testing: func: " + func.toString() + " " 
+//						+ func.getArguments()[i] + ".getType() is: " + func.getArguments()[i].getType());
 				params[i] = mTypeSortTranslator.getSort(func.getArguments()[i].getType(), func);
 			}
 

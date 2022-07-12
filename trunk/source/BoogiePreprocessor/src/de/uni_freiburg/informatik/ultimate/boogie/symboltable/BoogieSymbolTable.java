@@ -77,7 +77,7 @@ public class BoogieSymbolTable {
 		procMap.put(symbolName, decl);
 	}
 
-	protected void addProcedureOrFunction(final String symbolName, final FunctionDeclaration decl) {
+	public void addProcedureOrFunction(final String symbolName, final FunctionDeclaration decl) {
 		addSymbol(StorageClass.PROC_FUNC, null, symbolName, decl);
 	}
 

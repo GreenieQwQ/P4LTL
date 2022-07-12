@@ -1,4 +1,4 @@
-//#LTLProperty: (match(hdr.ethernet.etherType != 2048bv16, hdr.ipv4.protocol = 17bv8) => drop)
+//#LTLProperty: (match(hdr.ethernet.etherType != 2048bv16) => modify(hdr.ipv4.totalLen = old(hdr.ipv4.totalLen) - 1bv16 + 3bv16))
 //#LTLFairness: <>(match(hdr.ipv4.srcAddr=127.0.0.1/24))
 type Ref;
 type error=bv1;
@@ -215,7 +215,7 @@ procedure {:inline 1} ingress()
     }
 }
 procedure init.stack.index();
-    ensures (forall s:HeaderStack::stack.index[s]==0);
+//    ensures (forall s:HeaderStack::stack.index[s]==0);
 	modifies stack.index;
 
 procedure ipv4_lpm_0.action_run.limit();

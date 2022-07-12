@@ -19,13 +19,15 @@ public class Arguments extends AstNode {
 			this.args = new ArrayList<AstNode>();
 			this.args.add(arg);
 		}
+		this.addAllOutgoing(args);
 	}
 	
 	public Arguments(AstNode arg, AstNode args) {
 		if (args instanceof Arguments) {
 			this.args = ((Arguments) args).getArgs();
 			this.args.add(0, arg);
-		} 
+		}
+		this.addAllOutgoing(this.args);
 	}
 	
 	public ArrayList<AstNode> getArgs() {

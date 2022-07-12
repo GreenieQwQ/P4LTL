@@ -33,8 +33,10 @@ import java.util.*;
   }
   private void echoToken(String text)
   {
-  	System.out.println("Token: " + text);
+  	// System.out.println("Token: " + text);
   }
+  
+  int parens = 0;
 %} 
 
 LineTerminator = \r|\n|\r\n
@@ -79,11 +81,14 @@ IPMask = {IP} "/" {MaskInt}
 	{Identifier}    	{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
  }
  <PREDICATE>{
-  	"("						{echoToken(yytext()); return symbol(P4LTLSymbols.LPAR); }
+  	"("						{echoToken(yytext()); parens++; return symbol(P4LTLSymbols.LPAR); }
   	"="						{echoToken(yytext()); return symbol(P4LTLSymbols.EQ); }
   	"!="					{echoToken(yytext()); return symbol(P4LTLSymbols.NEQ); }
-  	")"						{echoToken(yytext()); yybegin(YYINITIAL); return symbol(P4LTLSymbols.RPAR); }
+  	")"						{echoToken(yytext()); parens--; if(parens == 0) { yybegin(YYINITIAL); } return symbol(P4LTLSymbols.RPAR); }
   	","						{echoToken(yytext()); return symbol(P4LTLSymbols.COMMA); }
+  	"old"					{echoToken(yytext()); return symbol(P4LTLSymbols.OLD); }
+	"+"						{echoToken(yytext()); return symbol(P4LTLSymbols.PLUS); }
+	"-"						{echoToken(yytext()); return symbol(P4LTLSymbols.MINUS); }
  	{ws}    				{/* ignore */ }
  	{Header}	    		{echoToken(yytext()); return symbol(P4LTLSymbols.NAME, yytext()); }
  	{BvIntegerLiteral}		{echoToken(yytext()); return symbol(P4LTLSymbols.BVINT, yytext()); }

@@ -35,6 +35,7 @@ typora-copy-images-to: ..\images
 3. 插桩代码的修改
 
    - 在`ast/PredicateType`中添加新谓词的类型
+   - 在`ast/Predicate`的`getBoogieName/getOp`中插桩新的Boogie变量名
    - 在`instrumentBoogie`函数
      - 第一个for循环中的`switch`部分添加基于新谓词类型的全局变量声明
      - 在第二个for循环中，确定需要插桩的`procedure`名称，添加`modifies`标识和调用`instrumentVariableSet`函数对置位代码进行插桩

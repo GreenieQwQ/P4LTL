@@ -8,18 +8,13 @@ import de.uni_freiburg.informatik.ultimate.ltl2aut.ast.AstNode;
 /**
  * Represents a bitvec literal which is a special form of a expression.
  */
-public class BitVec extends AstNode {
+public class BitVec extends BitVecNode {
     /**
      * The value given as String. This representation is used to support
      * arbitrarily large numbers. We do not need to compute with them but
      * give them 1-1 to the decision procedure.
      */
 	BigInteger value;
-
-    /**
-     * The number of bits in this bitvector.
-     */
-    int length;
 
     /**
      * The constructor taking initial values.
