@@ -1,4 +1,5 @@
-//#LTLProperty: (match(hdr.ethernet.etherType != 2048bv16) => modify(hdr.ipv4.totalLen = old(hdr.ipv4.totalLen) - 1bv16 + 3bv16))
+//#LTLVariables: a:bv16,b:bv16
+//#LTLProperty: (match(b = a, b = 2048bv16, hdr.ethernet.etherType != a) => modify(hdr.ipv4.totalLen = old(hdr.ipv4.totalLen) - 1bv16 + 3bv16))
 //#LTLFairness: <>(match(hdr.ipv4.srcAddr=127.0.0.1/24))
 type Ref;
 type error=bv1;

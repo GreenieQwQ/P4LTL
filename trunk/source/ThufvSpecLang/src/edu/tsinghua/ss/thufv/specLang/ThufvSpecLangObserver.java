@@ -169,13 +169,13 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		// both formats are in ltl2aut format and we need to create a check with boogie-code
 		String[] specification = this.getLTLPropertyString();
 		String[] fairness_constraint = this.extractFairnessPropertyFromInputFile();
-		String[] ltlvars = this.extractLTLVariablesFromInputFile();
+		String[] ltlVarsAndTypes = this.extractLTLVariablesFromInputFile();
 		mLogger.info("P4LTL Spec is: " + specification[0]);
-		specification[0] = compileP4LTLToLTL(specification[0]);
+		specification[0] = compileP4LTLToLTL(specification[0], ltlVarsAndTypes);
 		if (!fairness_constraint[0].equals(""))
 		{
 			mLogger.info("P4LTL Fairness Spec is: " + fairness_constraint[0]);
-			fairness_constraint[0] = compileP4LTLToLTL(fairness_constraint[0]);
+			fairness_constraint[0] = compileP4LTLToLTL(fairness_constraint[0], new String[0]);
 		}
 		// Replace solidity variables with boogie variables (for both accesses and sums)
 //		TreeMap<String, String> sum_map = this.get_sol_var_map("sum");
@@ -200,26 +200,25 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		else {
 			result = new PropertyContainer(specification[0]);
 		}
-//
-//		// This does not actually appear to be necessary, but I'll keep it in for now
-//		this.updateModifies();
-//		
-//		if (specification.length > 1) {
-//			throw new UnsupportedOperationException(
-//					"We currently support only one LTL property at a time, but found " + specification.length);
-//		} 
-//		System.out.println("Executed UtopiaSpecLang");
+		
+		// This does not actually appear to be necessary, but I'll keep it in for now
+		// this.updateModifies();	
+		if (specification.length > 1) {
+			throw new UnsupportedOperationException(
+					"We currently support only one LTL property at a time, but found " + specification.length);
+		} 
 	}
 	
-	private String compileP4LTLToLTL(String p4ltl) throws Exception {
+	// complie P4LTL 2 LTL, and instrument user defined vars =
+	private String compileP4LTLToLTL(String p4ltl, String[] ltlVarsAndTypes) throws Exception {
 		mLogger.info("Compiling formula: " + p4ltl);
 		AstNode p4ltlAst = p4ltl2Ast(p4ltl);
-		instrumentBoogie(p4ltlAst);	// TODO: set a new method for freevars
+		instrumentBoogie(p4ltlAst, ltlVarsAndTypes);	// TODO: set a new method for freevars
 		String regular_ltl = p4ltlAst.toString();
 		mLogger.info("Compiled to formula: " + regular_ltl);
 		return regular_ltl;
 	}
-	
+
 	private AstNode p4ltl2Ast(String p4ltl) throws Exception {
 		mLogger.info(String.format("Parsing P4LTL Formula to AstNode: %s", p4ltl));
 		final InputStreamReader isReader = new InputStreamReader(IOUtils.toInputStream(p4ltl));
@@ -234,8 +233,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 		} 
 	}
 	
-	private void instrumentBoogie(AstNode p4ltlAst) throws Exception {
-		// TODO: fill this method
+	private void instrumentBoogie(AstNode p4ltlAst, String[] ltlVarsAndTypes) throws Exception {
 		Unit newProg = unit;
 		ArrayList<Predicate> predicates = this.getPredicates(p4ltlAst, new ArrayList<Predicate>());
 		for(int i = 0; i < predicates.size(); ++i)
@@ -253,6 +251,24 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					mLogger.info("Defalut: No need to instrument " + predicate.getBoogieName());
 					break;
 			}
+		}
+		// add user defined vars
+		String[] ltlvars = new String[ltlVarsAndTypes.length];
+		String[] ltltyps = new String[ltlVarsAndTypes.length];
+		
+		// Add global variables for ltlvars
+		for (int i = 0; i < ltlVarsAndTypes.length; i++) {
+			String ltlVarAndType = ltlVarsAndTypes[i];
+			String[] split = ltlVarAndType.split(":");
+			if (split.length != 2) {
+				throw new Exception("No type given in LTLVariable declaration: "+ltlVarAndType);
+			}
+			String ltlvar = split[0];
+			String ltltyp  = split[1];
+			ltlvars[i] = ltlvar;
+			ltltyps[i] = ltltyp;
+			newProg = addGlobalVar(ltlvar, ltltyp, newProg);
+			mLogger.info("Add user free var: " + ltlvar);
 		}
 		
 		// get bitvec operations to add
@@ -300,7 +316,7 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					}			
 				}
 				
-				
+				// init vars
 				if(pname == "ULTIMATE.start")
 				{
 					ultimateStartSet = true;
@@ -309,11 +325,21 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 						{
 							initGlobalVar(b,predicate);
 						}
+						// havoc user defined free var
+						for (int i = 0; i < ltlvars.length; i++ ) {
+							String ltlvar = ltlvars[i];
+							String ltltyp = ltltyps[i];
+							havocGlobalVar(b, ltlvar, ltltyp);
+						}
 					} 
 					if(p.getSpecification() != null) {
 						for(Predicate predicate: predicates)
 						{
 							this.addModifies(predicate.getBoogieName(), p);
+						}
+						for (int i = 0; i < ltlvars.length; i++ ) {
+							String ltlvar = ltlvars[i];
+							this.addModifies(ltlvar, p);
 						}
 					}
 					
@@ -625,6 +651,8 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			return BoogieType.TYPE_INT;
 		} else if (ltltype.equals("Ref")) {
 			return BoogieType.TYPE_INT;
+		} else if (ltltype.startsWith("bv")) {
+			return BoogieType.createBitvectorType(Integer.parseInt(ltltype.substring(2)));
 		}
 		return null;
 	}
