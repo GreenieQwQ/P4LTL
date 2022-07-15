@@ -34,6 +34,10 @@ public class Arguments extends AstNode {
 		return this.args;
 	}
 	
+	public void setArgs(ArrayList<AstNode> args) {
+		this.args = args;
+	}
+	
 	@Override
 	public String toString() {
 		String str = "";

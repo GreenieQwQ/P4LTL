@@ -1,5 +1,5 @@
 //#LTLVariables: a:bv16,b:bv16
-//#LTLProperty: (match(b = a, b = 2048bv16, hdr.ethernet.etherType != a) => modify(hdr.ipv4.totalLen = old(hdr.ipv4.totalLen) - 1bv16 + 3bv16))
+//#LTLProperty: (fwd(3) && valid_after(hdr.ethernet) => modify(hdr.ipv4.totalLen = old(hdr.ipv4.totalLen) + 3bv16 - a - b ))
 //#LTLFairness: <>(match(hdr.ipv4.srcAddr=127.0.0.1/24))
 type Ref;
 type error=bv1;
@@ -99,8 +99,8 @@ procedure {:inline 1} NoAction_5()
 {
 }
 
-// Parser ParserImpl
-procedure {:inline 1} ParserImpl()
+// Parser _parser_ParserImpl
+procedure {:inline 1} _parser_ParserImpl()
 	modifies drop, isValid;
 {
     call start();
@@ -256,7 +256,7 @@ procedure {:inline 1} main()
         forward := false;
         call havocProcedure();
         //assume(hdr.ethernet.etherType != 2048bv16);
-        call ParserImpl();
+        call _parser_ParserImpl();
         call verifyChecksum();
         call ingress();
         call egress();

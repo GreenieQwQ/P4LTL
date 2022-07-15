@@ -64,7 +64,10 @@ IPMask = {IP} "/" {MaskInt}
 	
  	"match"				{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.MATCH); }
  	"modify"			{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.MODIFY); }
+ 	"fwd"				{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.FWD); }
  	"drop"				{echoToken(yytext()); return symbol(P4LTLSymbols.DROP); }
+ 	"valid_after"		{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.VALID_AFTER); }
+ 	"valid_before"		{echoToken(yytext()); yybegin(PREDICATE); return symbol(P4LTLSymbols.VALID_BEFORE); }
 	
 	"[]"				{echoToken(yytext()); return symbol(P4LTLSymbols.ALWAYS); }
 	"<>"				{echoToken(yytext()); return symbol(P4LTLSymbols.EVENTUALLY); }

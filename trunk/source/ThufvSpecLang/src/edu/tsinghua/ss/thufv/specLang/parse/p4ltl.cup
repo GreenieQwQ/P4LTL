@@ -10,12 +10,12 @@ parser P4LTLParser;
 option symbols=P4LTLSymbols;
 
 /* exprinals (tokens returned by the scanner). */
-terminal           	LPAR, RPAR, MATCH, MODIFY, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA, OLD, PLUS, MINUS;
+terminal           	LPAR, RPAR, MATCH, MODIFY, DROP, ALWAYS, EVENTUALLY, UNTIL, RELEASE, AND, OR, IMPLIES, NEXT, NEG, EQ, NEQ, COMMA, OLD, PLUS, MINUS, FWD, VALID_AFTER, VALID_BEFORE;
 terminal String 			NAME, BVINT, IPMASK;
 terminal BigInteger 		INT;
 
 /* Non-exprinals */
-non terminal AstNode     		 texpr, predicate, match_args, header_eq, name, expr;
+non terminal AstNode     		 texpr, predicate, match_args, valid_args, header_eq, name, expr;
 
 precedence right IMPLIES;
 precedence left OR;
@@ -73,6 +73,12 @@ predicate ::=
 	{: RESULT = new Predicate(PredicateType.modify, margs); :}
 	| DROP
 	{: RESULT = new Predicate(PredicateType.drop); :}
+	| FWD LPAR INT:i RPAR
+	{: RESULT = new Predicate(PredicateType.fwd, i); :}
+	| VALID_AFTER LPAR valid_args:v RPAR
+	{: RESULT = new Predicate(PredicateType.valid_after, v); :}
+	| VALID_BEFORE LPAR valid_args:v RPAR
+	{: RESULT = new Predicate(PredicateType.valid_before, v); :}
 	;
 
 match_args ::=
@@ -81,6 +87,13 @@ match_args ::=
 	
 	| header_eq:he COMMA match_args:m
 	{: RESULT = new Arguments(he, m); :}
+	;
+
+valid_args ::=
+	name:n
+	{: RESULT = new Arguments(n); :}
+	| name:n COMMA valid_args:v
+	{: RESULT = new Arguments(n, v); :}
 	;
 
 header_eq ::= 

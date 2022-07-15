@@ -242,6 +242,9 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			switch (predicate.getType()) {
 				case modify:
 				case match:
+				case fwd:
+				case valid_after:
+				case valid_before:
 					addGlobalVar(predicate.getBoogieName(), "bool", newProg);
 					mLogger.info("Add global declaration: " + predicate.getBoogieName());
 					
@@ -305,14 +308,15 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 				if (pname == "main" && p.getSpecification() != null)
 				{
 					for (Predicate predicate : predicates) {
-						if(predicate.getType() == PredicateType.match || predicate.getType() == PredicateType.modify)
-							this.addModifies(predicate.getBoogieName(), p);
+						// if(predicate.getType() == PredicateType.match || predicate.getType() == PredicateType.modify)
+						this.addModifies(predicate.getBoogieName(), p);
 					}
 				}
 				if (pname == "main" && b != null) {
 					for (Predicate predicate : predicates) {
-						if(predicate.getType() == PredicateType.match || predicate.getType() == PredicateType.modify)
-							instrumentVariableSet(p, b, predicate);	
+//						if(predicate.getType() == PredicateType.match || 
+//								predicate.getType() == PredicateType.modify)
+						instrumentVariableSet(p, b, predicate);	
 					}			
 				}
 				
@@ -564,6 +568,9 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 			switch (predicate.getType()) {
 				case modify:
 				case match:
+				case fwd:
+				case valid_after:
+				case valid_before:
 					// get bool match expression
 					String exprString = "";
 					ArrayList<AstNode> args = predicate.getArgs().getArgs();
@@ -575,23 +582,30 @@ public class ThufvSpecLangObserver implements IUnmanagedObserver {
 					// get goto-based assignment
 					Statement[] assignStmts = getGotoAssignmentStmts(p, exprString, predicateName);
 					// get insert pos
-					if(predicate.getType() == PredicateType.modify)
+					if(predicate.getType() == PredicateType.modify || 
+						predicate.getType() == PredicateType.fwd ||
+						predicate.getType() == PredicateType.valid_after)
 					{
 						// the last stmt is `return;`
 						stmts = this.addStatementArrays(stmts, assignStmts, stmts.length-1);
 					}
-					else if(predicate.getType() == PredicateType.match)
+					else if(predicate.getType() == PredicateType.match ||
+							predicate.getType() == PredicateType.valid_before)
 					{
-						int index = 0;
+						int index = -1;
 						for (int i = 0; i < stmts.length; i++) {
 							Statement s = stmts[i];
 							if (s instanceof CallStatement) {
 								String mname = ((CallStatement) s).getMethodName();
-								if (mname.equals("havocProcedure")) {
-									index = i + 1;	// just behind havoc
+//								if (mname.equals("havocProcedure")) {
+//									index = i + 1;	// just behind havoc
+//								}
+								if (mname.startsWith("_parser_")) {
+									index = i + 1;	// just behind _parser_
 								}
 							}
 						}
+						assert index != -1 : "Cannot locate `_parser_` function";
 						stmts = this.addStatementArrays(stmts, assignStmts, index);
 					}
 					break;
