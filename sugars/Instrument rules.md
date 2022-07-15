@@ -32,10 +32,8 @@
   
 - > $valid\_after(\bar{h})$
   >
-  > - 尚未完成
-  >
   > - $\bar{h}$为header组成的向量
-  >   - $\bar{h} \rightarrow h | h, \bar{h} $ 
+  >  - $\bar{h} \rightarrow h | h, \bar{h} $ 
   > - valid\_after
   >   - Premise
   >     - s语句为`s = while(true){body;}`
@@ -47,7 +45,6 @@
   
 - > $valid\_before(\bar{h})$
   >
-  > - 尚未完成
   > - $\bar{h}$为header组成的向量
   >   - $\bar{h} \rightarrow h | h, \bar{h} $ 
   > - valid\_before
@@ -61,7 +58,6 @@
   
 - > $fwd(P)$
   >
-  > - 尚未完成
   > - $P$表示包被转发的port
   > - fwd
   >   - Premise
