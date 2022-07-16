@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
@@ -200,6 +201,8 @@ public final class ProductGenerator {
 	 * name.
 	 */
 	private void createProductStates() {
+		mLogger.info("Creating Product States...");
+		ArrayList<IcfgLocation> finalStates = getCFGFinalStates();
 		for (final BoogieIcfgLocation origpp : mRCFGLocations) {
 			if (isNonProductNode(origpp)) {
 				final BoogieIcfgLocation newPP = createProductProgramPoint(
@@ -214,11 +217,57 @@ public final class ProductGenerator {
 				updateProductStates(newPP, ProductLocationNameGenerator.generateStateName(origpp, nwaState));
 
 				// accepting states are marked with AcceptingNodeAnnotation
-				if (mNWA.isFinal(nwaState)) {
+				if (mNWA.isFinal(nwaState) && isCFGFinalState(finalStates, origpp)) {
+//				if (mNWA.isFinal(nwaState)) {
 					mAcceptingNodeAnnotation.annotate(newPP);
 				}
 			}
 		}
+	}
+	
+	/*
+	 *   Find a path from mainENTRY to mainEXIT.
+	 *   All the nodes on this path are final states.
+	 */
+	private ArrayList<IcfgLocation> getCFGFinalStates() {
+		BoogieIcfgLocation mainEXIT = null;
+		for(final BoogieIcfgLocation loc : mRCFGLocations) {
+			if(loc.toString().equals("mainEXIT")) {
+				mainEXIT = loc;
+				break;
+			}
+		}
+		if(mainEXIT == null) return null;
+		IcfgLocation mainEntry = null;
+		final ArrayList<IcfgLocation> queue = new ArrayList<IcfgLocation>();
+		final ArrayList<IcfgLocation> finalStates = new ArrayList<IcfgLocation>();
+		final HashMap<IcfgLocation, Boolean> visited = new HashMap<IcfgLocation, Boolean>();
+		queue.add(mainEXIT);
+		while(!queue.isEmpty()) {
+			IcfgLocation l = queue.get(0);
+			queue.remove(0);
+			if(visited.containsKey(l) && visited.get(l)) continue;
+			visited.put(l, true);
+			if(!l.toString().startsWith("mainE")) finalStates.add(l);
+			for(IcfgLocation outgoingNode : l.getOutgoingNodes()) {
+				if(outgoingNode.toString().equals("mainENTRY")) {
+					mainEntry = outgoingNode;
+				}
+			}
+			if(mainEntry != null) break;
+			queue.addAll(l.getOutgoingNodes());
+		}
+		for(final IcfgLocation l : finalStates) {
+			mLogger.info("####final State Node: "+l.toString());
+		}
+		return finalStates;
+	}
+	
+	private boolean isCFGFinalState(final ArrayList<IcfgLocation> finalStates, final IcfgLocation loc) {
+		for(IcfgLocation l : finalStates) {
+			if(l.toString().equals(loc.toString())) return true;
+		}
+		return false;
 	}
 
 	private void updateProductStates(final BoogieIcfgLocation newPP, final DebugIdentifier statename) {
@@ -379,7 +428,8 @@ public final class ProductGenerator {
 				// we encounted an unhandled edge type and have
 				// to abort
 				throw new UnsupportedOperationException("BuchiProgramProduct does not support RCFGEdges of type "
-						+ rcfgEdge.getClass().getSimpleName());
+						+ rcfgEdge.getClass().getSimpleName()
+						+ "(EdgeSrc: "+origRcfgSourceLoc.toString()+")");
 			}
 		}
 	}
