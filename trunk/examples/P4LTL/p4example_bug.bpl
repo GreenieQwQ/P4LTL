@@ -1,5 +1,5 @@
 //#LTLVariables: a:bv16,b:bv16
-//#LTLProperty: [](valid_before(hdr.ipv4) => modify(hdr.ipv4.ttl = old(hdr.ipv4.ttl) + 1bv8))
+//#LTLProperty: [](valid_before(hdr.ipv4) && !drop => modify(hdr.ipv4.ttl = old(hdr.ipv4.ttl) + 255bv8))
 //#LTLFairness: <>(match(hdr.ipv4.srcAddr=127.0.0.1/24))
 type Ref;
 type error=bv1;
