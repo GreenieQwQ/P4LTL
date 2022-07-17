@@ -235,7 +235,7 @@ public class LassoPartitioneer {
 			term = (TermVariable) symbol.getSymbol();
 			isConstant = true;
 		} else {
-			throw new UnsupportedOperationException("function symbols not yet supported");
+			throw new UnsupportedOperationException("function symbols not yet supported: " + symbol + " Type: " + symbol.getClass());
 		}
 		final IProgramVar inVarRankVar = original.getInVarsReverseMapping().get(term);
 		final IProgramVar outVarRankVar = original.getOutVarsReverseMapping().get(term);

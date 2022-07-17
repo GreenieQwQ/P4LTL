@@ -713,6 +713,7 @@ public final class SmtUtils {
 			return numericEquality(script, lhs, rhs);
 		}
 		if (SmtSortUtils.isBoolSort(lhs.getSort())) {
+			// System.out.println("LHS: " + lhs + " RHS: " + rhs);
 			return booleanEquality(script, lhs, rhs);
 		}
 		if (SmtSortUtils.isBitvecSort(lhs.getSort())) {
