@@ -1,15 +1,16 @@
-//#LTLProperty: [](valid_before(hdr.ipv4))
-type Ref=int;
+//#LTLProperty: [](AP(drop))
+type Ref;
 type error=bv1;
 type HeaderStack = [int]Ref;
 
 var last:[HeaderStack]Ref;
 var forward:bool;
-var isValid:[Ref]bool;
-var emit:[Ref]bool;
+var isValid:[Ref]int;
+var emit:[Ref]int;
 var stack.index:[HeaderStack]int;
 var size:[HeaderStack]int;
 var drop:bool;
+var isvalid_ipv4: bool;
 
 // Struct standard_metadata_t
 var standard_metadata.ingress_port:bv9;
@@ -131,13 +132,13 @@ procedure clear_drop();
     ensures drop==false;
 	modifies drop;
 procedure clear_emit();
-    // ensures (forall header:Ref:: emit[header]==false);
+    ensures (forall header:Ref:: emit[header]==0);
 	modifies emit;
 procedure clear_forward();
     ensures forward==false;
 	modifies forward;
 procedure clear_valid();
-    // ensures (forall header:Ref:: isValid[header]==false);
+    ensures (forall header:Ref:: isValid[header]==0);
 	modifies isValid;
 
 // Control computeChecksum
@@ -185,11 +186,11 @@ procedure forward_0.apply_table_exit();
 procedure {:inline 1} havocProcedure()
 	modifies hdr.ethernet.dstAddr, hdr.ethernet.etherType, hdr.ethernet.srcAddr, hdr.ipv4.diffserv, hdr.ipv4.dstAddr, hdr.ipv4.flags, hdr.ipv4.fragOffset, hdr.ipv4.hdrChecksum, hdr.ipv4.identification, hdr.ipv4.ihl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.totalLen, hdr.ipv4.ttl, hdr.ipv4.version, isValid;
 {
-    isValid[hdr.ethernet] := false;
+    isValid[hdr.ethernet] := 0;
     havoc hdr.ethernet.dstAddr;
     havoc hdr.ethernet.srcAddr;
     havoc hdr.ethernet.etherType;
-    isValid[hdr.ipv4] := false;
+    isValid[hdr.ipv4] := 0;
     havoc hdr.ipv4.version;
     havoc hdr.ipv4.ihl;
     havoc hdr.ipv4.diffserv;
@@ -208,7 +209,7 @@ procedure {:inline 1} havocProcedure()
 procedure {:inline 1} ingress()
 	modifies drop, forward, hdr.ethernet.dstAddr, hdr.ipv4.dstAddr, hdr.ipv4.ttl, meta.routing_metadata.nhop_ipv4, standard_metadata.egress_spec;
 {
-    if((isValid[hdr.ipv4]) && (bugt.bv8(hdr.ipv4.ttl, 0bv8))){
+    if((isValid[hdr.ipv4] == 1) && (bugt.bv8(hdr.ipv4.ttl, 0bv8))){
         call ipv4_lpm_0.apply();
         call forward_0.apply();
     }
@@ -248,11 +249,12 @@ procedure ipv4_lpm_0.apply_table_entry();
 // Table Exit ipv4_lpm_0.apply_table_exit
 procedure ipv4_lpm_0.apply_table_exit();
 procedure {:inline 1} main()
-	modifies drop, forward, hdr.ethernet.dstAddr, hdr.ethernet.etherType, hdr.ethernet.srcAddr, hdr.ipv4.diffserv, hdr.ipv4.dstAddr, hdr.ipv4.flags, hdr.ipv4.fragOffset, hdr.ipv4.hdrChecksum, hdr.ipv4.identification, hdr.ipv4.ihl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.totalLen, hdr.ipv4.ttl, hdr.ipv4.version, isValid, meta.routing_metadata.nhop_ipv4, standard_metadata.egress_port, standard_metadata.egress_spec;
+	modifies drop, forward, hdr.ethernet.dstAddr, hdr.ethernet.etherType, hdr.ethernet.srcAddr, hdr.ipv4.diffserv, hdr.ipv4.dstAddr, hdr.ipv4.flags, hdr.ipv4.fragOffset, hdr.ipv4.hdrChecksum, hdr.ipv4.identification, hdr.ipv4.ihl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.totalLen, hdr.ipv4.ttl, hdr.ipv4.version, isValid, meta.routing_metadata.nhop_ipv4, standard_metadata.egress_port, standard_metadata.egress_spec, isvalid_ipv4;
 {
         drop := false;
         forward := false;
         call havocProcedure();
+		isvalid_ipv4 := isValid[hdr.ipv4] == 1;
         //assume(hdr.ethernet.etherType != 2048bv16);
         call _parser_ParserImpl();
         call verifyChecksum();
@@ -265,9 +267,10 @@ procedure {:inline 1} main()
         // assert((hdr.ethernet.etherType != 2048bv16) ==> (drop == true));
 }
 procedure mainProcedure()
-	modifies drop, emit, forward, forward_0.action_run, hdr.ethernet.dstAddr, hdr.ethernet.etherType, hdr.ethernet.srcAddr, hdr.ipv4.diffserv, hdr.ipv4.dstAddr, hdr.ipv4.flags, hdr.ipv4.fragOffset, hdr.ipv4.hdrChecksum, hdr.ipv4.identification, hdr.ipv4.ihl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.totalLen, hdr.ipv4.ttl, hdr.ipv4.version, ipv4_lpm_0.action_run, isValid, meta.routing_metadata.nhop_ipv4, send_frame_0.action_run, stack.index, standard_metadata.egress_port, standard_metadata.egress_spec;
+	modifies drop, emit, forward, forward_0.action_run, hdr.ethernet.dstAddr, hdr.ethernet.etherType, hdr.ethernet.srcAddr, hdr.ipv4.diffserv, hdr.ipv4.dstAddr, hdr.ipv4.flags, hdr.ipv4.fragOffset, hdr.ipv4.hdrChecksum, hdr.ipv4.identification, hdr.ipv4.ihl, hdr.ipv4.protocol, hdr.ipv4.srcAddr, hdr.ipv4.totalLen, hdr.ipv4.ttl, hdr.ipv4.version, ipv4_lpm_0.action_run, isValid, meta.routing_metadata.nhop_ipv4, send_frame_0.action_run, stack.index, standard_metadata.egress_port, standard_metadata.egress_spec, isvalid_ipv4;
 {
     assume(hdr.ethernet != hdr.ipv4);
+	isvalid_ipv4 := false;
     call ipv4_lpm_0.action_run.limit();
     call forward_0.action_run.limit();
     call send_frame_0.action_run.limit();
@@ -286,14 +289,14 @@ procedure mark_to_drop();
 procedure {:inline 1} packet_in.extract(header:Ref)
 modifies isValid;
 {
-    isValid[header] := true;
+    isValid[header] := 1;
 }
 
 //Parser State parse_ethernet
 procedure {:inline 1} parse_ethernet()
 	modifies isValid;
 {
-    isValid[hdr.ethernet] := true;
+    isValid[hdr.ethernet] := 1;
     if(hdr.ethernet.etherType == 2048bv16){
         call parse_ipv4();
     }
@@ -347,7 +350,7 @@ procedure send_frame_0.apply_table_entry();
 // Table Exit send_frame_0.apply_table_exit
 procedure send_frame_0.apply_table_exit();
 procedure {:inline 1} setInvalid(header:Ref);
-    ensures (isValid[header] == false);
+    ensures (isValid[header] == 0);
 	modifies isValid;
 procedure {:inline 1} setValid(header:Ref);
 

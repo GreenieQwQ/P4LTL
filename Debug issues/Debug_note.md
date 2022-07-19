@@ -57,18 +57,33 @@ typora-copy-images-to: ..\images
                   - 是否是function属性的原因？
                     - 尝试删除`add.bv`的`{:bvbuiltin}`属性
                       - 失败，仍然报相同错误：`java.lang.UnsupportedOperationException: function symbols not yet supported: (add.bv8 (_ BitVec 8) (_ BitVec 8) (_ BitVec 8)) Type: class de.uni_freiburg.informatik.ultimate.lib.smtlibutils.NonTheorySymbol$Function`
-                  - 但是ranking function应该只和loop有关，上面这些function都只是在初始化时候用到，不参与循环，应该是这个原因，所以smartpulse没有遇到报错，也不需要解决这个问题
+                  - 但是ranking function似乎仅check loop？上面这些function都只是在初始化时候用到，不参与循环，应该是这个原因，所以smartpulse没有遇到报错，也不需要解决这个问题
                     - 因此需要解决UA的ranking function综合不支持function symbol的方法
                       - brute方案：放弃综合，不断unroll使用判断前缀可行的方案来进行check，原UA仅Unroll一次![image-20220717181531698](../images/image-20220717181531698.png)
                       - 方案2：仿照Smartpulse的启发式 + brute方案尽可能地unroll check，否则返回unknown
 
 - `p4example_boogie_bug2.bpl`
 
-  - 
+  - 在`checkLoopFeasibility`中报错：`de.uni_freiburg.informatik.ultimate.logic.SMTLIBException: External (MP ..\adds\mathsat.exe -unsat_core_generation=3 (10) with exit command (exit)) Received EOF on stdin`
 
-- TODO: 找到error2报错的原因
+    - 可能是solver的问题？
+    - ![image-20220719102033852](../images/image-20220719102033852.png)
+      - 从中得到solver的选取可能和精化的策略有关，尝试改变精化策略
+      - 成功解决这个bug！WALRUS策略的Mathsat不彳亍！WARTHOG使用的CVC4彳亍！
+        - ![image-20220719102253337](../images/image-20220719102253337.png)
 
-- error2: `HoareTripleChecker results differ between IncrementalHoareTripleChecker`
+  - ```
+    de.uni_freiburg.informatik.ultimate.logic.SMTLIBException: External (MP ..\adds\mathsat.exe -unsat_core_generation=3 (10) with exit command (exit)) Received EOF on stdin. No stderr output.
+    	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Executor.parse(Executor.java:243)
+    	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Executor.parseSuccess(Executor.java:258)
+    	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Executor.createProcess(Executor.java:144)
+    	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Executor.<init>(Executor.java:110)
+    	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Scriptor.<init>(Scriptor.java:74)
+    ```
+
+  - 但是其实还是遇到了相同的function symbol bug导致不能够运行：![image-20220719102349790](../images/image-20220719102349790.png)
+
+- error3: `HoareTripleChecker results differ between IncrementalHoareTripleChecker`
 
   - ```
     java.lang.AssertionError: HoareTripleChecker results differ between IncrementalHoareTripleChecker (result: VALID) and MonolithicHoareTripleChecker (result: INVALID)
@@ -78,10 +93,55 @@ typora-copy-images-to: ..\images
     
     ```
 
-- error1: `Arrays with Bool as argument are not supported`
+  - 这个目前似乎没能够再次复现
+
+- error2：`External (MP ..\adds\mathsat.exe -unsat_core_generation=3 (10) with exit command (exit)) Received EOF on stdin`——原因基本check
+
+  - 在`p4example_bug.bpl`等中出现
+
+- error1: `Arrays with Bool as argument are not supported`——原因基本check
 
   - ```
     [2022-07-16 22:43:12,616 FATAL L?                        ?]: An unrecoverable error occured during an interaction with an SMT solver:
     de.uni_freiburg.informatik.ultimate.logic.SMTLIBException: Arrays with Bool as argument are not supported
     	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Parser$Action$.CUP$do_action(Parser.java:1458)
     	at de.uni_freiburg.informatik.ultimate.smtsolver.external.Parser.do_action(Parser.java:658)
+
+  - 在`p4example_bug2.bpl`等中出现
+
+---
+
+## Synthesis
+
+- 复现bug相关——因为finialstate代码的改动、为了修复其他bug的preference的改动、尝试修复bug的改动，上面的note当作log看就好，现在check存在bug的文件只需要看如下的归档
+- 现在绝大部分的bug都出现在了ranking function的综合当中，其中有
+  - `Arrays with Bool as argument are not supported`
+    - 将Boogie文件中所有的`[Ref] bool`删去能够继续运行
+  - `Quantifiers are not supported`：![image-20220719104614177](../images/image-20220719104614177.png)
+    - 将Boogie文件中所有的`forall`注释掉能够继续运行
+  - `Unknown sort in equality @term: (= |v_old(hdr.ethernet.dstAddr)_12| v_hdr.ethernet.dstAddr_43)`
+    - 诡异，出现这个bug仅check了`//#LTLProperty: [](valid_before(hdr.ipv4))`，并未添加fairness和old相关
+    - `p4example_bug2.bpl`能够复现
+    - `var hdr.ethernet.dstAddr:bv48`——推测是不支持bv？
+  - `function symbols not yet supported: (add.bv8 (_ BitVec 8) (_ BitVec 8) (_ BitVec 8))`
+    - 这个推测需要mark掉boogie中所有的function才能够运行
+      - 其实只需要mark loop中的function即可
+    - `p4example_boogie_bug2.bpl`和`p4example_boogie_bug1.bpl`都能够复现这个bug
+- 使用`LTLAutomizerBpl_bitvec_debug.epf`来检测，原epf check因为使用Mathsat存在其他bug
+- 综上，因为ranking function的综合和P4Boogie有太多的不兼容，可能需要放弃对秩函数的综合，尝试的解决方案：
+  - brute方案：放弃综合，不断unroll使用判断前缀可行的方案来进行check，原UA仅Unroll一次![image-20220717181531698](../images/image-20220717181531698.png)
+  - 方案2：仿照Smartpulse先采用启发式 + 再采用brute方案尽可能地unroll check，到达阈值返回unknown
+    - 但是启发式需要保证正确性，不过似乎可能可以复用Smartpulse的部分源码？
+  - 方案3：改动UA源码的ranking synthesis部分
+    - 姑且算一种可能，但是需要的effort推测是unaffordable的，因为需要保证正确性
+  - 方案4：改动P4Boogie，兼容ranking synthesis部分：
+    - 不能够含有`[Ref] bool`：`Arrays with Bool as argument are not supported`
+    - 不能够含有量词：`Quantifiers are not supported`
+    - 不能够含有函数：`function symbols not yet supported: (add.bv8 (_ BitVec 8) (_ BitVec 8) (_ BitVec 8))`
+      - 似乎仅需要loop不含有函数即可？（存疑）
+    - `Unknown sort in equality @term: (= |v_old(hdr.ethernet.dstAddr)_12| v_hdr.ethernet.dstAddr_43)`
+      - 性质中未出现old，应该是本身的验证导致的
+
+- 另：遇到ranking funtion不能够直接返回unknown：![image-20220719114102905](../images/image-20220719114102905.png)
+  - 尝试注释运行，结果unable to decide会导致check终止：![image-20220719114150971](../images/image-20220719114150971.png)
+
