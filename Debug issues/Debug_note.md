@@ -7,7 +7,7 @@ typora-copy-images-to: ..\images
 
 - 可以考虑将boogieprinter仅调用boogie相关的验证（`BoogieLTL.xml`）来check插桩的正确性，避免插桩可能的bug导致复杂化
 
-  - `p4example_text.bpl`
+  - `p4example_boogie_bug1.bpl`
 
   - 测试：`#LTLProperty: [](AP(isValid[hdr.ipv4] == true))`，使用`BoogieLTL.xml`验证报错：`Arrays with Bool as argument are not supported`
 
@@ -57,14 +57,18 @@ typora-copy-images-to: ..\images
                   - 是否是function属性的原因？
                     - 尝试删除`add.bv`的`{:bvbuiltin}`属性
                       - 失败，仍然报相同错误：`java.lang.UnsupportedOperationException: function symbols not yet supported: (add.bv8 (_ BitVec 8) (_ BitVec 8) (_ BitVec 8)) Type: class de.uni_freiburg.informatik.ultimate.lib.smtlibutils.NonTheorySymbol$Function`
-                  - 但是ranking function应该只和loop有关，上面这些function都只是在初始化时候用到，不参与循环，应该是这个原因，所以smartpulse没有遇到报错
+                  - 但是ranking function应该只和loop有关，上面这些function都只是在初始化时候用到，不参与循环，应该是这个原因，所以smartpulse没有遇到报错，也不需要解决这个问题
                     - 因此需要解决UA的ranking function综合不支持function symbol的方法
-                      - brute方案：放弃综合，不断unroll使用判断前缀可行的方案来进行check![image-20220717181531698](../images/image-20220717181531698.png)
-                      - 方案2：仿照Smartpulse的启发式 + brute方案
+                      - brute方案：放弃综合，不断unroll使用判断前缀可行的方案来进行check，原UA仅Unroll一次![image-20220717181531698](../images/image-20220717181531698.png)
+                      - 方案2：仿照Smartpulse的启发式 + brute方案尽可能地unroll check，否则返回unknown
 
-- TODO: 找到error1报错的原因
+- `p4example_boogie_bug2.bpl`
 
-- error1: `HoareTripleChecker results differ between IncrementalHoareTripleChecker`
+  - 
+
+- TODO: 找到error2报错的原因
+
+- error2: `HoareTripleChecker results differ between IncrementalHoareTripleChecker`
 
   - ```
     java.lang.AssertionError: HoareTripleChecker results differ between IncrementalHoareTripleChecker (result: VALID) and MonolithicHoareTripleChecker (result: INVALID)
@@ -74,7 +78,7 @@ typora-copy-images-to: ..\images
     
     ```
 
-- error2: `Arrays with Bool as argument are not supported`
+- error1: `Arrays with Bool as argument are not supported`
 
   - ```
     [2022-07-16 22:43:12,616 FATAL L?                        ?]: An unrecoverable error occured during an interaction with an SMT solver:
